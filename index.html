@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Gratefulness Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gratefulness">
+<meta name="theme-color" content="#FCCC06">
+<link rel="apple-touch-icon" href="logo.png">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --yellow: #FCCC06;
+  --teal: #00C2CB;
+  --black: #000;
+  --white: #fff;
+  --gray: #1A1A1A;
+  --light: #F5F5F5;
+  --mid: #E5E5E5;
+  --muted: #888;
+}
+
+body {
+  font-family:'Montserrat',sans-serif;
+  background:#111;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:20px;
+}
+
+/* ── PHONE SHELL ── */
+.phone {
+  width:390px; height:844px;
+  background:var(--black);
+  border-radius:52px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 30px 80px rgba(0,0,0,.8), inset 0 0 0 2px #333;
+  flex-shrink:0;
+}
+
+/* ── SCREEN ENGINE ── */
+.phone-viewport {
+  width:100%; height:100%;
+  position:relative;
+  overflow:hidden;
+}
+
+.screen {
+  width:100%; height:100%;
+  position:absolute;
+  top:0; left:0;
+  display:flex;
+  flex-direction:column;
+  background:var(--white);
+  transform:translateX(100%);
+  transition:transform .32s cubic-bezier(.4,0,.2,1);
+  will-change:transform;
+}
+.screen.active { transform:translateX(0); }
+.screen.exit-left { transform:translateX(-30%); }
+
+/* ALL SVG icons: never block clicks */
+svg { pointer-events:none; display:block; }
+
+/* ── STATUS BAR ── */
+.sb {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 22px 8px;
+  font-size:12px;
+  font-weight:700;
+  flex-shrink:0;
+}
+.sb-icons { display:flex; gap:4px; align-items:center; }
+.sb-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+/* ── BUTTONS ── */
+.btn {
+  border:none; border-radius:50px;
+  font-family:'Montserrat',sans-serif;
+  font-size:13px; font-weight:800;
+  letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; width:100%;
+  padding:16px;
+  transition:opacity .15s, transform .1s;
+  -webkit-appearance:none;
+}
+.btn:active { transform:scale(.97); opacity:.85; }
+.btn-black { background:var(--black); color:var(--yellow); }
+.btn-outline { background:transparent; color:var(--black); border:2.5px solid var(--black); margin-top:12px; }
+.btn-teal { background:var(--teal); color:var(--white); }
+
+/* ── BOTTOM NAV ── */
+.nav {
+  position:absolute; bottom:0; left:0; right:0;
+  background:var(--white);
+  border-top:1px solid #ececec;
+  display:flex;
+  padding:8px 0 22px;
+  z-index:50;
+}
+.nav-item {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  cursor:pointer;
+  padding:6px 0;
+  user-select:none;
+}
+.nav-label {
+  font-size:9px; font-weight:700;
+  letter-spacing:.8px; text-transform:uppercase;
+  color:var(--muted);
+}
+.nav-item.on .nav-label { color:var(--teal); }
+
+/* ── SHARED COMPONENTS ── */
+.section-label {
+  font-size:9px; font-weight:800;
+  letter-spacing:3px; text-transform:uppercase;
+  color:var(--muted); margin-bottom:-2px;
+}
+
+.scrollable { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.scrollable::-webkit-scrollbar { display:none; }
+
+/* ───────────────────────────
+   SCREEN 1 — SPLASH
+─────────────────────────── */
+#s-splash { background:var(--yellow); }
+#s-splash .sb { color:var(--black); background:var(--yellow); }
+
+.splash-body {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:20px 32px 48px; text-align:center;
+}
+
+.logo-row {
+  display:flex; align-items:center;
+  justify-content:center; gap:6px;
+  margin-bottom:28px;
+}
+.logo-op { font-size:20px; font-weight:900; color:var(--black); line-height:1; }
+
+.brand-eyebrow {
+  font-size:9px; font-weight:800; letter-spacing:5px;
+  text-transform:uppercase; color:var(--black); opacity:.55;
+  margin-bottom:12px;
+}
+.splash-headline {
+  font-size:40px; font-weight:900; color:var(--black);
+  text-transform:uppercase; letter-spacing:2px;
+  line-height:1.0; margin-bottom:10px;
+}
+.splash-sub {
+  font-size:12px; font-weight:600; color:var(--black);
+  opacity:.5; margin-bottom:48px; letter-spacing:1px;
+}
+
+/* ───────────────────────────
+   SCREEN 2 — ONBOARDING
+─────────────────────────── */
+#s-onboard { background:var(--black); }
+
+.onboard-top { background:var(--yellow); padding:14px 24px 36px; flex-shrink:0; }
+.onboard-top .sb { padding:0 0 12px; background:transparent; color:var(--black); }
+.onboard-eyebrow {
+  font-size:9px; font-weight:800; letter-spacing:4px;
+  text-transform:uppercase; color:var(--black); opacity:.5;
+  margin-bottom:14px;
+}
+.onboard-top h1 {
+  font-size:34px; font-weight:900; text-transform:uppercase;
+  letter-spacing:1px; color:var(--black); line-height:1.05;
+}
+
+.steps-list {
+  flex:1; padding:24px 20px; display:flex; flex-direction:column; gap:14px;
+}
+.step-card {
+  background:var(--gray); border-radius:20px; padding:18px 18px;
+  display:flex; align-items:center; gap:14px;
+  border-left:4px solid var(--yellow);
+}
+.step-num {
+  width:36px; height:36px; background:var(--yellow); color:var(--black);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:16px; flex-shrink:0;
+}
+.step-text h3 {
+  font-size:11px; font-weight:800; text-transform:uppercase;
+  letter-spacing:1px; color:var(--yellow); margin-bottom:4px;
+}
+.step-text p { font-size:12px; color:var(--muted); line-height:1.45; font-weight:500; }
+.onboard-cta { padding:16px 20px 30px; background:var(--black); }
+
+/* ───────────────────────────
+   SCREEN 3 — HOME
+─────────────────────────── */
+#s-home { background:var(--light); }
+
+.home-header { background:var(--yellow); padding:14px 22px 20px; flex-shrink:0; }
+.home-header .sb { padding:0 0 12px; background:transparent; color:var(--black); }
+
+.home-toprow { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.home-greeting { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--black); opacity:.5; }
+.home-name { font-size:22px; font-weight:900; color:var(--black); text-transform:uppercase; letter-spacing:1px; }
+.avatar {
+  width:44px; height:44px; border-radius:50%; background:var(--black);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+
+.streak-pill {
+  background:rgba(0,0,0,.1); border-radius:14px; padding:11px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.streak-left { display:flex; align-items:center; gap:10px; }
+.streak-lbl { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--black); opacity:.5; }
+.streak-num { font-size:24px; font-weight:900; color:var(--black); line-height:1; }
+.xp-badge {
+  background:var(--black); color:var(--yellow);
+  border-radius:50px; padding:6px 14px;
+  font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase;
+}
+
+.home-body { padding:16px 16px 84px; display:flex; flex-direction:column; gap:14px; }
+
+.today-card {
+  background:var(--black); border-radius:22px; padding:20px; cursor:pointer;
+  transition:transform .1s;
+}
+.today-card:active { transform:scale(.98); }
+.today-daytag { font-size:9px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--yellow); margin-bottom:5px; }
+.today-prompt { font-size:17px; font-weight:800; color:var(--white); line-height:1.2; text-transform:uppercase; margin-bottom:18px; }
+.today-row { display:flex; justify-content:space-between; align-items:center; }
+.today-btn {
+  background:var(--yellow); color:var(--black); border:none; border-radius:50px;
+  padding:10px 22px; font-family:'Montserrat',sans-serif;
+  font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer;
+}
+.today-icons { display:flex; gap:8px; align-items:center; }
+
+.progress-card {
+  background:var(--white); border-radius:20px; padding:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+.progress-hd { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.progress-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--black); }
+.progress-count { font-size:12px; font-weight:700; color:var(--teal); }
+.dots { display:grid; grid-template-columns:repeat(10,1fr); gap:5px; }
+.dot { width:100%; aspect-ratio:1; border-radius:50%; background:var(--mid); }
+.dot.done { background:var(--yellow); }
+.dot.now  { background:var(--teal); }
+
+.tree-card {
+  background:var(--teal); border-radius:20px; padding:18px;
+  display:flex; align-items:center; gap:14px; cursor:pointer;
+}
+.tree-info .tree-lbl { font-size:9px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.6); margin-bottom:3px; }
+.tree-stage { font-size:18px; font-weight:900; color:var(--white); text-transform:uppercase; margin-bottom:8px; }
+.tree-bar { background:rgba(255,255,255,.25); border-radius:4px; height:5px; width:130px; overflow:hidden; }
+.tree-fill { background:var(--white); height:100%; width:35%; border-radius:4px; }
+
+/* ── RECENT ENTRIES ── */
+.entry-list { display:flex; flex-direction:column; gap:8px; }
+.entry-card {
+  background:var(--white); border-radius:16px; padding:13px 14px;
+  display:flex; align-items:center; gap:12px;
+  box-shadow:0 1px 6px rgba(0,0,0,.06); cursor:pointer;
+  transition:transform .1s;
+}
+.entry-card:active { transform:scale(.98); }
+.entry-left { text-align:center; flex-shrink:0; width:38px; }
+.entry-day { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--teal); }
+.entry-date { font-size:11px; font-weight:700; color:var(--black); }
+.entry-mid { flex:1; min-width:0; }
+.entry-prompt { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--black); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-preview { font-size:11px; font-weight:500; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entry-icons { flex-shrink:0; }
+
+.badges-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+.badges-row::-webkit-scrollbar { display:none; }
+.badge-mini { flex-shrink:0; width:66px; text-align:center; cursor:pointer; }
+.badge-ico {
+  width:56px; height:56px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 5px;
+}
+.badge-ico.on  { background:var(--yellow); }
+.badge-ico.off { background:var(--mid); opacity:.5; }
+.badge-ico.on svg  { color:var(--black); }
+.badge-ico.off svg { color:#999; }
+.badge-nm { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--black); }
+
+/* ───────────────────────────
+   SCREEN 4 — JOURNAL
+─────────────────────────── */
+#s-journal { background:var(--white); }
+
+.journal-hd { background:var(--yellow); padding:14px 22px 24px; flex-shrink:0; }
+.journal-hd .sb { padding:0 0 10px; background:transparent; color:var(--black); }
+.hd-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.back-btn {
+  width:34px; height:34px; border-radius:50%; background:rgba(0,0,0,.12);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+}
+.hd-label { font-size:10px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--black); opacity:.6; }
+.prompt-box { background:rgba(0,0,0,.08); border-radius:14px; padding:14px; }
+.prompt-daytag { font-size:9px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--black); opacity:.4; margin-bottom:5px; }
+.prompt-text { font-size:16px; font-weight:800; color:var(--black); text-transform:uppercase; line-height:1.2; }
+
+.journal-body { padding:20px 16px; display:flex; flex-direction:column; gap:18px; }
+.field-lbl { font-size:9px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--black); margin-bottom:8px; }
+
+.jarea {
+  width:100%; background:var(--light); border:none; border-radius:14px;
+  padding:14px; font-family:'Montserrat',sans-serif; font-size:13px;
+  font-weight:500; color:var(--black); resize:none; height:110px;
+  outline:none; line-height:1.6;
+}
+.jarea:focus { background:#EDFEFF; outline:2px solid var(--teal); }
+
+.grats { display:flex; flex-direction:column; gap:8px; }
+.grat-row {
+  display:flex; align-items:center; gap:10px;
+  background:var(--light); border-radius:12px; padding:11px 14px;
+}
+.grat-num {
+  width:26px; height:26px; background:var(--yellow); color:var(--black);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:900; flex-shrink:0;
+}
+.grat-input {
+  flex:1; background:none; border:none;
+  font-family:'Montserrat',sans-serif; font-size:13px; font-weight:600;
+  color:var(--black); outline:none;
+}
+.grat-input::placeholder { color:#aaa; }
+
+.media-grid { display:flex; gap:10px; }
+.media-btn {
+  flex:1; background:var(--light); border:2px dashed #ccc;
+  border-radius:14px; padding:14px 8px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  cursor:pointer;
+}
+.media-lbl { font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+
+.save-btn {
+  background:var(--black); color:var(--yellow); border:none; border-radius:50px;
+  padding:16px; width:100%; font-family:'Montserrat',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+
+/* ───────────────────────────
+   SCREEN 5 — BADGES
+─────────────────────────── */
+#s-badges { background:var(--black); }
+
+.badges-hd { background:var(--yellow); padding:14px 22px 24px; flex-shrink:0; }
+.badges-hd .sb { padding:0 0 10px; background:transparent; color:var(--black); }
+.badges-hd h2 { font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--black); margin-bottom:3px; }
+.badges-hd p { font-size:11px; font-weight:600; color:var(--black); opacity:.5; }
+.xp-bar-wrap { margin-top:12px; background:rgba(0,0,0,.12); border-radius:6px; height:7px; overflow:hidden; }
+.xp-bar { background:var(--black); height:100%; width:42%; border-radius:6px; }
+.xp-row { display:flex; justify-content:space-between; font-size:9px; font-weight:700; letter-spacing:1px; color:var(--black); opacity:.5; margin-top:5px; }
+
+.badge-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:18px 14px 90px; }
+.badge-card {
+  background:var(--gray); border-radius:18px; padding:14px 10px;
+  text-align:center; cursor:pointer; transition:transform .1s;
+}
+.badge-card:active { transform:scale(.95); }
+.badge-card.locked { opacity:.35; }
+.badge-card-ico { display:flex; justify-content:center; margin-bottom:7px; }
+.badge-card-ico svg { color:var(--yellow); }
+.badge-card.locked .badge-card-ico svg { color:var(--muted); }
+.badge-card-name { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--yellow); margin-bottom:2px; }
+.badge-card.locked .badge-card-name { color:var(--muted); }
+.badge-card-desc { font-size:9px; font-weight:500; color:var(--muted); line-height:1.3; }
+
+/* ───────────────────────────
+   SCREEN 6 — COMMUNITY
+─────────────────────────── */
+#s-community { background:var(--light); }
+
+.comm-hd { background:var(--teal); padding:14px 22px 20px; flex-shrink:0; }
+.comm-hd .sb { padding:0 0 10px; background:transparent; color:var(--white); }
+.comm-hd h2 { font-size:26px; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--white); margin-bottom:3px; }
+.comm-hd p { font-size:11px; font-weight:600; color:rgba(255,255,255,.6); }
+
+.comm-body { padding:14px 14px 90px; display:flex; flex-direction:column; gap:12px; }
+.post {
+  background:var(--white); border-radius:18px; padding:16px;
+  box-shadow:0 2px 8px rgba(0,0,0,.05);
+}
+.post-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.post-av {
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.post-av.y { background:var(--yellow); }
+.post-av.t { background:var(--teal); }
+.post-av.b { background:var(--black); }
+.post-name { font-size:12px; font-weight:800; color:var(--black); text-transform:uppercase; }
+.post-meta { font-size:10px; font-weight:600; color:var(--teal); }
+.post-body { font-size:13px; font-weight:500; color:var(--black); line-height:1.6; margin-bottom:12px; }
+.post-actions { display:flex; gap:14px; }
+.post-act { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; }
+.post-act.liked { color:var(--yellow); }
+
+/* ───────────────────────────
+   SCREEN 7 — PROFILE
+─────────────────────────── */
+#s-profile { background:var(--light); }
+
+.profile-hd { background:var(--black); padding:14px 22px 26px; text-align:center; flex-shrink:0; }
+.profile-hd .sb { padding:0 0 12px; background:transparent; color:var(--white); text-align:left; }
+.profile-tree { display:flex; justify-content:center; margin-bottom:8px; }
+.profile-name { font-size:20px; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--yellow); }
+.profile-stage { font-size:9px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.38); margin-top:3px; }
+.profile-stats { display:flex; justify-content:center; gap:30px; margin-top:18px; }
+.stat { text-align:center; }
+.stat-v { font-size:28px; font-weight:900; color:var(--yellow); }
+.stat-l { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.38); }
+
+.profile-body { padding:16px 16px 90px; display:flex; flex-direction:column; gap:10px; }
+.section-lbl-sm { font-size:9px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:6px; }
+
+.plan-banner {
+  background:var(--yellow); border-radius:18px; padding:16px 18px;
+  display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+}
+.plan-text h3 { font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:var(--black); }
+.plan-text p { font-size:11px; font-weight:600; color:var(--black); opacity:.58; margin-top:2px; }
+.plan-price { font-size:22px; font-weight:900; color:var(--black); text-align:right; }
+.plan-price span { font-size:10px; font-weight:700; display:block; opacity:.55; }
+
+.menu-row {
+  background:var(--white); border-radius:14px; padding:13px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; box-shadow:0 1px 5px rgba(0,0,0,.05);
+  transition:transform .1s;
+}
+.menu-row:active { transform:scale(.98); }
+.menu-left { display:flex; align-items:center; gap:12px; }
+.menu-ico {
+  width:34px; height:34px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ico-y { background:var(--yellow); }
+.ico-t { background:var(--teal); }
+.ico-b { background:var(--black); }
+.ico-g { background:var(--mid); }
+.menu-lbl { font-size:12px; font-weight:700; color:var(--black); text-transform:uppercase; letter-spacing:.5px; }
+
+/* ───────────────────────────
+   SCREEN 8 — SUBSCRIBE
+─────────────────────────── */
+#s-subscribe { background:var(--black); }
+
+.sub-hd { background:var(--black); padding:14px 22px 26px; flex-shrink:0; }
+.sub-hd .sb { padding:0 0 12px; background:transparent; color:var(--white); }
+.sub-hd h2 { font-size:30px; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--yellow); line-height:1.05; }
+.sub-hd p { font-size:12px; color:rgba(255,255,255,.45); margin-top:8px; font-weight:600; }
+
+.sub-body { padding:16px; display:flex; flex-direction:column; gap:12px; }
+
+.plan-card { border-radius:20px; padding:20px; cursor:pointer; }
+.plan-card .plan-badge { font-size:9px; font-weight:800; letter-spacing:3px; text-transform:uppercase; margin-bottom:3px; }
+.plan-card .plan-name { font-size:22px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+.plan-card .plan-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.plan-card .price { font-size:28px; font-weight:900; }
+.plan-card .price-mo { font-size:10px; font-weight:700; opacity:.6; }
+.plan-feature { font-size:11px; font-weight:600; display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+
+.pc-yellow { background:var(--yellow); border:3px solid var(--black); }
+.pc-yellow .plan-badge,.pc-yellow .plan-name,.pc-yellow .price,.pc-yellow .plan-feature { color:var(--black); }
+.pc-yellow .price-mo { color:var(--black); }
+
+.pc-teal { background:var(--teal); }
+.pc-teal .plan-badge,.pc-teal .plan-name,.pc-teal .price,.pc-teal .plan-feature { color:var(--white); }
+
+.pc-black { background:var(--gray); border:1px solid #333; }
+.pc-black .plan-badge { color:var(--yellow); }
+.pc-black .plan-name,.pc-black .plan-feature { color:var(--white); }
+.pc-black .price { color:var(--yellow); }
+.pc-black .price-mo { color:rgba(255,255,255,.4); }
+
+/* ───────────────────────────
+   SCREEN 9 — COMPLETE
+─────────────────────────── */
+#s-complete { background:var(--yellow); }
+
+.complete-body {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:28px; text-align:center;
+}
+.complete-ico { margin-bottom:20px; animation:bob .7s ease infinite alternate; }
+@keyframes bob { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+.complete-title { font-size:36px; font-weight:900; text-transform:uppercase; letter-spacing:2px; color:var(--black); line-height:1.05; margin-bottom:8px; }
+.complete-sub { font-size:13px; font-weight:600; color:var(--black); opacity:.58; }
+.xp-pill2 {
+  background:var(--black); color:var(--yellow);
+  border-radius:50px; padding:10px 24px;
+  font-size:13px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  margin:16px 0 24px;
+}
+.share-row { display:flex; gap:10px; width:100%; margin-bottom:14px; }
+.share-btn {
+  flex:1; background:var(--black); color:var(--yellow);
+  border:none; border-radius:14px; padding:12px 4px;
+  font-family:'Montserrat',sans-serif; font-size:10px; font-weight:800;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+
+/* ───────────────────────────
+   NAV DOTS
+─────────────────────────── */
+.nav-dots { display:flex; justify-content:center; gap:6px; margin-top:12px; }
+.ndot {
+  width:6px; height:6px; border-radius:50%; background:#444;
+  cursor:pointer; transition:background .2s, transform .2s;
+}
+.ndot.on { background:var(--yellow); transform:scale(1.4); }
+.dot-labels {
+  font-family:'Montserrat',sans-serif; font-size:9px;
+  letter-spacing:1px; color:#555; margin-top:8px;
+  text-align:center; text-transform:uppercase;
+}
+
+@media(max-width:480px){
+  body{padding:0;align-items:flex-start;}
+  .phone{width:100vw;height:100svh;border-radius:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SVG SYMBOL LIBRARY ═══ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
+  </symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+  </symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 9H4a2 2 0 000 4h2"/><path d="M18 9h2a2 2 0 010 4h-2"/><path d="M6 3h12v9a6 6 0 01-12 0V3z"/><path d="M12 18v3"/><path d="M9 21h6"/>
+  </symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+  </symbol>
+  <symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 01-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/>
+  </symbol>
+  <symbol id="i-sprout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22V12"/><path d="M12 12C12 7 7 5 7 5s0 5 5 7z"/><path d="M12 12c0 0 5-2 5-7 0 0-5 2-5 7z"/>
+  </symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22v-7"/><path d="M17 8l-5-6-5 6h3l-4 5h5v2h2v-2h5l-4-5h3z"/>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+  </symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 12c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 7c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/><path d="M2 17c2-4 4-4 6 0s4 4 6 0 4-4 6 0"/>
+  </symbol>
+  <symbol id="i-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+  </symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+  </symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+  </symbol>
+  <symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+  </symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+  </symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+  </symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 20h20"/><path d="M5 20L2 8l5 4 5-8 5 8 5-4-3 12"/>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+  </symbol>
+  <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+  </symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </symbol>
+  <symbol id="i-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+  </symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+  </symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"/>
+  </symbol>
+  <symbol id="i-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+  </symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.5 2C7 2 5 4 5 6.5c0 .5.1 1 .3 1.5C4.5 8.5 4 9.7 4 11c0 2 1 3.5 2.5 4.5 0 .3-.1.7-.1 1 0 2 1.5 3.5 3.5 3.5.5 0 1-.1 1.5-.3"/>
+    <path d="M14.5 2C17 2 19 4 19 6.5c0 .5-.1 1-.3 1.5.8.5 1.3 1.7 1.3 3 0 2-1 3.5-2.5 4.5 0 .3.1.7.1 1 0 2-1.5 3.5-3.5 3.5-.5 0-1-.1-1.5-.3"/>
+    <line x1="12" y1="2" x2="12" y2="20"/>
+    <path d="M8 8c0 1.5 1 2.5 2 3"/><path d="M16 8c0 1.5-1 2.5-2 3"/>
+  </symbol>
+  <symbol id="i-smile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+  </symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+  </symbol>
+</svg>
+
+<!-- helper shorthand -->
+<script>
+function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" style="color:'+(col||'currentColor')+';pointer-events:none;display:block;flex-shrink:0"><use href="#'+id+'"/></svg>'; }
+</script>
+
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+<div class="phone">
+<div class="phone-viewport" id="vp">
+
+<!-- ════════════════════════
+     S1 · SPLASH
+════════════════════════ -->
+<div class="screen active" id="s-splash">
+  <div class="sb" style="background:var(--yellow);color:var(--black);">
+    <span>9:41</span>
+    <div class="sb-icons">
+      <div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div>
+      <svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg>
+    </div>
+  </div>
+  <div class="splash-body">
+    <div class="logo-row">
+      <img src="logo.png" alt="The Gratefulness Challenge" style="width:180px;height:auto;pointer-events:none;mix-blend-mode:multiply;">
+    </div>
+    <div class="brand-eyebrow">The Gratefulness Challenge™</div>
+    <div class="splash-headline">30 Days<br>To A<br>New You</div>
+    <div class="splash-sub">Brain + Heart = Gratitude</div>
+    <button class="btn btn-black" onclick="go('s-onboard')">Start Your Journey</button>
+    <button class="btn btn-outline" onclick="go('s-home')">I Already Have An Account</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S2 · ONBOARDING
+════════════════════════ -->
+<div class="screen" id="s-onboard">
+  <div class="onboard-top">
+    <div class="sb" style="background:var(--yellow);color:var(--black);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <div class="onboard-eyebrow">The Gratefulness Challenge</div>
+    <h1>How It<br>Works</h1>
+  </div>
+  <div class="steps-list">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-text"><h3>Daily Journal</h3><p>Answer a new gratitude prompt every day with text, photos, voice notes, or video.</p></div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-text"><h3>Earn XP &amp; Badges</h3><p>Build streaks, unlock 12 achievement badges, and watch your tree grow from seed to gold.</p></div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-text"><h3>Share &amp; Connect</h3><p>Invite family, join the community feed, and share your 30-day recap when you finish.</p></div>
+    </div>
+  </div>
+  <div class="onboard-cta">
+    <button class="btn btn-black" onclick="go('s-home')">Let's Do This</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S3 · HOME
+════════════════════════ -->
+<div class="screen" id="s-home">
+  <div class="home-header">
+    <div class="sb" style="background:var(--yellow);color:var(--black);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <div class="home-toprow">
+      <div><div class="home-greeting" id="home-greeting">Good Morning</div><div class="home-name" id="home-name">Rafael</div></div>
+      <div class="avatar" onclick="go('s-profile')">
+        <img src="logo.png" alt="logo" style="width:28px;height:28px;object-fit:contain;pointer-events:none;filter:invert(1);">
+      </div>
+    </div>
+    <div class="streak-pill">
+      <div class="streak-left">
+        <svg width="26" height="26" style="color:var(--black);pointer-events:none"><use href="#i-flame"/></svg>
+        <div><div class="streak-lbl">Day Streak</div><div class="streak-num" id="streak-num">7</div></div>
+      </div>
+      <div class="xp-badge" id="xp-badge">420 XP</div>
+    </div>
+  </div>
+
+  <div class="scrollable">
+    <div class="home-body">
+      <div class="section-label">Today's Prompt</div>
+      <div class="today-card" onclick="go('s-journal')">
+        <div class="today-daytag" id="home-daytag">Day 8 of 30 · Challenge #8</div>
+        <div class="today-prompt" id="home-prompt">What are you most grateful for this week?</div>
+        <div class="today-row">
+          <button class="today-btn" onclick="event.stopPropagation();go('s-journal')">Write Now</button>
+          <div class="today-icons">
+            <svg width="18" height="18" style="color:rgba(255,255,255,.45);pointer-events:none"><use href="#i-pen"/></svg>
+            <svg width="18" height="18" style="color:rgba(255,255,255,.45);pointer-events:none"><use href="#i-mic"/></svg>
+            <svg width="18" height="18" style="color:rgba(255,255,255,.45);pointer-events:none"><use href="#i-camera"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">30-Day Progress</div>
+      <div class="progress-card">
+        <div class="progress-hd"><div class="progress-title">Your Journey</div><div class="progress-count" id="progress-count">8 / 30 Days</div></div>
+        <div class="dots" id="progress-dots">
+          <div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot done"></div>
+          <div class="dot done"></div><div class="dot done"></div><div class="dot done"></div><div class="dot now"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+
+      <div class="tree-card" onclick="go('s-badges')">
+        <svg width="58" height="58" style="color:rgba(255,255,255,.9);pointer-events:none"><use href="#i-sprout"/></svg>
+        <div class="tree-info">
+          <div class="tree-lbl">Your Tree</div>
+          <div class="tree-stage" id="tree-stage-name">Seedling</div>
+          <div class="tree-bar"><div class="tree-fill" id="tree-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="section-label">Recent Entries</div>
+      <div class="entry-list" id="recent-entries">
+        <div class="entry-card" onclick="go('s-journal')">
+          <div class="entry-left">
+            <div class="entry-day">Day 7</div>
+            <div class="entry-date">Jun 15</div>
+          </div>
+          <div class="entry-mid">
+            <div class="entry-prompt">Who made you smile this week?</div>
+            <div class="entry-preview">My daughter called out of the blue just to say she was thinking of me...</div>
+          </div>
+          <div class="entry-icons">
+            <svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-pen"/></svg>
+          </div>
+        </div>
+        <div class="entry-card" onclick="go('s-journal')">
+          <div class="entry-left">
+            <div class="entry-day">Day 6</div>
+            <div class="entry-date">Jun 14</div>
+          </div>
+          <div class="entry-mid">
+            <div class="entry-prompt">What body part are you grateful for?</div>
+            <div class="entry-preview">My hands — I never thought about how much I do with them every single day...</div>
+          </div>
+          <div class="entry-icons">
+            <svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-mic"/></svg>
+          </div>
+        </div>
+        <div class="entry-card" onclick="go('s-journal')">
+          <div class="entry-left">
+            <div class="entry-day">Day 5</div>
+            <div class="entry-date">Jun 13</div>
+          </div>
+          <div class="entry-mid">
+            <div class="entry-prompt">A challenge you overcame?</div>
+            <div class="entry-preview">Getting through last year changed me. I'm grateful I made it through...</div>
+          </div>
+          <div class="entry-icons">
+            <svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-camera"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Your Badges</div>
+      <div class="badges-row">
+        <div class="badge-mini" data-badge="first-light" onclick="go('s-badges')">
+          <div class="badge-ico"><svg width="26" height="26" style="pointer-events:none"><use href="#i-sun"/></svg></div>
+          <div class="badge-nm">First Light</div>
+        </div>
+        <div class="badge-mini" data-badge="on-fire" onclick="go('s-badges')">
+          <div class="badge-ico"><svg width="26" height="26" style="pointer-events:none"><use href="#i-flame"/></svg></div>
+          <div class="badge-nm">On Fire</div>
+        </div>
+        <div class="badge-mini" data-badge="mind-full" onclick="go('s-badges')">
+          <div class="badge-ico"><svg width="26" height="26" style="pointer-events:none"><use href="#i-brain"/></svg></div>
+          <div class="badge-nm">Mind Full</div>
+        </div>
+        <div class="badge-mini" data-badge="champion" onclick="go('s-badges')">
+          <div class="badge-ico"><svg width="26" height="26" style="pointer-events:none"><use href="#i-trophy"/></svg></div>
+          <div class="badge-nm">Champion</div>
+        </div>
+        <div class="badge-mini" data-badge="golden" onclick="go('s-badges')">
+          <div class="badge-ico"><svg width="26" height="26" style="pointer-events:none"><use href="#i-star"/></svg></div>
+          <div class="badge-nm">Golden</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-item on" onclick="go('s-home')">
+      <svg width="22" height="22" style="color:var(--teal);pointer-events:none"><use href="#i-home"/></svg>
+      <div class="nav-label" style="color:var(--teal)">Home</div>
+    </div>
+    <div class="nav-item" onclick="go('s-journal')">
+      <svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-pen"/></svg>
+      <div class="nav-label">Journal</div>
+    </div>
+    <div class="nav-item" onclick="go('s-badges')">
+      <svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-trophy"/></svg>
+      <div class="nav-label">Badges</div>
+    </div>
+    <div class="nav-item" onclick="go('s-community')">
+      <svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-heart"/></svg>
+      <div class="nav-label">Community</div>
+    </div>
+    <div class="nav-item" onclick="go('s-profile')">
+      <svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-person"/></svg>
+      <div class="nav-label">Profile</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S4 · JOURNAL
+════════════════════════ -->
+<div class="screen" id="s-journal">
+  <div class="journal-hd">
+    <div class="sb" style="background:var(--yellow);color:var(--black);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <div class="hd-row">
+      <div class="back-btn" onclick="go('s-home')">
+        <svg width="18" height="18" style="color:var(--black);pointer-events:none"><use href="#i-back"/></svg>
+      </div>
+      <div class="hd-label">Daily Journal</div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-daytag" id="journal-daytag">Day 8 of 30</div>
+      <div class="prompt-text" id="journal-prompt">What are you most grateful for this week?</div>
+    </div>
+  </div>
+
+  <div class="scrollable">
+    <div class="journal-body">
+      <div style="background:var(--black);border-radius:18px;padding:18px;">
+        <div id="journal-body-daytag" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--yellow);margin-bottom:6px;">Today's Prompt · Day 8 of 30</div>
+        <div id="journal-body-prompt" style="font-size:17px;font-weight:800;color:var(--white);text-transform:uppercase;line-height:1.2;">What are you most grateful for this week?</div>
+      </div>
+      <div>
+        <div class="field-lbl">Your Reflection</div>
+        <textarea class="jarea" placeholder="This week I'm grateful for..."></textarea>
+      </div>
+      <div>
+        <div class="field-lbl" style="margin-bottom:10px">3 Things I'm Grateful For</div>
+        <div class="grats">
+          <div class="grat-row"><div class="grat-num">1</div><input class="grat-input" placeholder="I'm grateful for..."></div>
+          <div class="grat-row"><div class="grat-num">2</div><input class="grat-input" placeholder="I'm grateful for..."></div>
+          <div class="grat-row"><div class="grat-num">3</div><input class="grat-input" placeholder="I'm grateful for..."></div>
+        </div>
+      </div>
+      <div>
+        <div class="field-lbl" style="margin-bottom:10px">Add Media</div>
+        <div class="media-grid">
+          <div class="media-btn">
+            <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-camera"/></svg>
+            <div class="media-lbl">Photo</div>
+          </div>
+          <div class="media-btn">
+            <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-mic"/></svg>
+            <div class="media-lbl">Voice</div>
+          </div>
+          <div class="media-btn">
+            <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-video"/></svg>
+            <div class="media-lbl">Video</div>
+          </div>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveEntry()">
+        <svg width="18" height="18" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg>
+        Save Today's Entry
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S5 · BADGES
+════════════════════════ -->
+<div class="screen" id="s-badges">
+  <div class="badges-hd">
+    <div class="sb" style="background:var(--yellow);color:var(--black);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <h2>Badges</h2>
+    <p id="badges-count">3 of 12 earned</p>
+    <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar-fill"></div></div>
+    <div class="xp-row"><span id="badges-xp">420 XP</span><span>Level 3</span></div>
+  </div>
+  <div class="scrollable">
+    <div class="badge-grid">
+      <div class="badge-card" data-badge="first-light">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-sun"/></svg></div>
+        <div class="badge-card-name">First Light</div><div class="badge-card-desc">Complete Day 1</div>
+      </div>
+      <div class="badge-card" data-badge="on-fire">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-flame"/></svg></div>
+        <div class="badge-card-name">On Fire</div><div class="badge-card-desc">7-day streak</div>
+      </div>
+      <div class="badge-card" data-badge="mind-full">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-brain"/></svg></div>
+        <div class="badge-card-name">Mind Full</div><div class="badge-card-desc">5 reflections</div>
+      </div>
+      <div class="badge-card" data-badge="flow-state">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-wave"/></svg></div>
+        <div class="badge-card-name">Flow State</div><div class="badge-card-desc">14-day streak</div>
+      </div>
+      <div class="badge-card" data-badge="golden">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-star"/></svg></div>
+        <div class="badge-card-name">Golden</div><div class="badge-card-desc">Day 20 done</div>
+      </div>
+      <div class="badge-card" data-badge="champion">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-trophy"/></svg></div>
+        <div class="badge-card-name">Champion</div><div class="badge-card-desc">All 30 days</div>
+      </div>
+      <div class="badge-card" data-badge="golden-tree">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-tree"/></svg></div>
+        <div class="badge-card-name">Golden Tree</div><div class="badge-card-desc">Max tree stage</div>
+      </div>
+      <div class="badge-card" data-badge="family">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-people"/></svg></div>
+        <div class="badge-card-name">Family</div><div class="badge-card-desc">Invite 2 members</div>
+      </div>
+      <div class="badge-card" data-badge="share-joy">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-share"/></svg></div>
+        <div class="badge-card-name">Share Joy</div><div class="badge-card-desc">Share 3 posts</div>
+      </div>
+      <div class="badge-card" data-badge="voice">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-mic"/></svg></div>
+        <div class="badge-card-name">Voice</div><div class="badge-card-desc">5 voice entries</div>
+      </div>
+      <div class="badge-card" data-badge="snapshot">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-camera"/></svg></div>
+        <div class="badge-card-name">Snapshot</div><div class="badge-card-desc">5 photo entries</div>
+      </div>
+      <div class="badge-card" data-badge="legend">
+        <div class="badge-card-ico"><svg width="32" height="32" style="pointer-events:none"><use href="#i-sparkle"/></svg></div>
+        <div class="badge-card-name">Legend</div><div class="badge-card-desc">2nd challenge</div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item" onclick="go('s-home')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-home"/></svg><div class="nav-label">Home</div></div>
+    <div class="nav-item" onclick="go('s-journal')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-pen"/></svg><div class="nav-label">Journal</div></div>
+    <div class="nav-item on"><svg width="22" height="22" style="color:var(--teal);pointer-events:none"><use href="#i-trophy"/></svg><div class="nav-label" style="color:var(--teal)">Badges</div></div>
+    <div class="nav-item" onclick="go('s-community')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-heart"/></svg><div class="nav-label">Community</div></div>
+    <div class="nav-item" onclick="go('s-profile')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-person"/></svg><div class="nav-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S6 · COMMUNITY
+════════════════════════ -->
+<div class="screen" id="s-community">
+  <div class="comm-hd">
+    <div class="sb" style="background:var(--teal);color:var(--white);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <h2>Community</h2>
+    <p>See what others are grateful for</p>
+  </div>
+  <div class="scrollable">
+    <div class="comm-body">
+      <div class="post">
+        <div class="post-top">
+          <div class="post-av y"><svg width="18" height="18" style="color:var(--black);pointer-events:none"><use href="#i-smile"/></svg></div>
+          <div><div class="post-name">Maria G.</div><div class="post-meta">Day 12 · 2h ago</div></div>
+        </div>
+        <div class="post-body">Today I'm grateful for my morning coffee and the quiet before everyone wakes up. It's the small things that carry you through the big days.</div>
+        <div class="post-actions">
+          <div class="post-act liked"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-heart"/></svg> 24</div>
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 3 replies</div>
+        </div>
+      </div>
+      <div class="post">
+        <div class="post-top">
+          <div class="post-av t"><svg width="18" height="18" style="color:var(--white);pointer-events:none"><use href="#i-person"/></svg></div>
+          <div><div class="post-name">James T.</div><div class="post-meta">Day 8 · 5h ago</div></div>
+        </div>
+        <div class="post-body">Just finished Day 8 and this challenge is rewiring how I see everything. Grateful for my health, my family, and being alive one more day.</div>
+        <div class="post-actions">
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 18</div>
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 7 replies</div>
+        </div>
+      </div>
+      <div class="post">
+        <div class="post-top">
+          <div class="post-av b"><svg width="18" height="18" style="color:var(--yellow);pointer-events:none"><use href="#i-sparkle"/></svg></div>
+          <div><div class="post-name">Aisha M.</div><div class="post-meta">Day 22 · 8h ago</div></div>
+        </div>
+        <div class="post-body">Day 22 check-in! My tree is a sapling now. I can literally feel the difference in my mood since I started. Keep going everyone!</div>
+        <div class="post-actions">
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 41</div>
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 12 replies</div>
+        </div>
+      </div>
+      <div class="post">
+        <div class="post-top">
+          <div class="post-av y"><svg width="18" height="18" style="color:var(--black);pointer-events:none"><use href="#i-sprout"/></svg></div>
+          <div><div class="post-name">DeShawn R.</div><div class="post-meta">Day 30 · Yesterday</div></div>
+        </div>
+        <div class="post-body">I DID IT. 30 days. My golden tree is glowing. Thank you to everyone in this community who kept me going. This challenge changed my life.</div>
+        <div class="post-actions">
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 89</div>
+          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 34 replies</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item" onclick="go('s-home')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-home"/></svg><div class="nav-label">Home</div></div>
+    <div class="nav-item" onclick="go('s-journal')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-pen"/></svg><div class="nav-label">Journal</div></div>
+    <div class="nav-item" onclick="go('s-badges')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-trophy"/></svg><div class="nav-label">Badges</div></div>
+    <div class="nav-item on"><svg width="22" height="22" style="color:var(--teal);pointer-events:none"><use href="#i-heart"/></svg><div class="nav-label" style="color:var(--teal)">Community</div></div>
+    <div class="nav-item" onclick="go('s-profile')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-person"/></svg><div class="nav-label">Profile</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S7 · PROFILE
+════════════════════════ -->
+<div class="screen" id="s-profile">
+  <div class="profile-hd">
+    <div class="sb" style="background:var(--black);color:var(--white);padding:0 0 12px;text-align:left;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <div class="profile-tree"><svg width="64" height="64" style="color:var(--yellow);pointer-events:none"><use href="#i-sprout"/></svg></div>
+    <div class="profile-name" id="profile-name">Rafael R.</div>
+    <div class="profile-stage" id="profile-stage">Seedling · Stage 1 of 5</div>
+    <div class="profile-stats">
+      <div class="stat"><div class="stat-v" id="profile-streak">7</div><div class="stat-l">Streak</div></div>
+      <div class="stat"><div class="stat-v" id="profile-xp">420</div><div class="stat-l">XP</div></div>
+      <div class="stat"><div class="stat-v" id="profile-badges">3</div><div class="stat-l">Badges</div></div>
+    </div>
+  </div>
+  <div class="scrollable">
+    <div class="profile-body">
+      <div class="plan-banner" onclick="go('s-subscribe')">
+        <div class="plan-text"><h3>Upgrade to Family</h3><p>Add up to 5 members</p></div>
+        <div class="plan-price">$19.99<span>/ month</span></div>
+      </div>
+      <div class="section-lbl-sm">Account</div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-gear"/></svg></div><div class="menu-lbl">Settings</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-t"><svg width="16" height="16" style="color:var(--white);pointer-events:none"><use href="#i-bell"/></svg></div><div class="menu-lbl">Notifications</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row" onclick="go('s-subscribe')">
+        <div class="menu-left"><div class="menu-ico ico-b"><svg width="16" height="16" style="color:var(--yellow);pointer-events:none"><use href="#i-crown"/></svg></div><div class="menu-lbl">My Plan</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="section-lbl-sm">My Journey</div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-book"/></svg></div><div class="menu-lbl">Past Journals</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-t"><svg width="16" height="16" style="color:var(--white);pointer-events:none"><use href="#i-award"/></svg></div><div class="menu-lbl">My Certificate</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-g"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-share"/></svg></div><div class="menu-lbl">Share My Recap</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row">
+        <div class="menu-left"><div class="menu-ico ico-g"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-people"/></svg></div><div class="menu-lbl">Invite Family</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item" onclick="go('s-home')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-home"/></svg><div class="nav-label">Home</div></div>
+    <div class="nav-item" onclick="go('s-journal')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-pen"/></svg><div class="nav-label">Journal</div></div>
+    <div class="nav-item" onclick="go('s-badges')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-trophy"/></svg><div class="nav-label">Badges</div></div>
+    <div class="nav-item" onclick="go('s-community')"><svg width="22" height="22" style="color:var(--muted);pointer-events:none"><use href="#i-heart"/></svg><div class="nav-label">Community</div></div>
+    <div class="nav-item on"><svg width="22" height="22" style="color:var(--teal);pointer-events:none"><use href="#i-person"/></svg><div class="nav-label" style="color:var(--teal)">Profile</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S8 · SUBSCRIBE
+════════════════════════ -->
+<div class="screen" id="s-subscribe">
+  <div class="sub-hd">
+    <div class="sb" style="background:var(--black);color:var(--white);padding:0 0 10px;">
+      <span>9:41</span>
+      <div class="sb-icons"><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-wifi"/></svg></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <div class="back-btn" style="background:rgba(255,255,255,.1);" onclick="go('s-profile')">
+        <svg width="18" height="18" style="color:var(--white);pointer-events:none"><use href="#i-back"/></svg>
+      </div>
+      <div style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4);">Choose Your Plan</div>
+    </div>
+    <h2>Unlock Your<br>Full Journey</h2>
+    <p>30-day free trial · Cancel anytime</p>
+  </div>
+  <div class="scrollable">
+    <div class="sub-body">
+      <div class="plan-card pc-yellow">
+        <div class="plan-row">
+          <div><div class="plan-badge">Most Popular</div><div class="plan-name">Individual</div></div>
+          <div style="text-align:right"><div class="price">$9.99</div><div class="price-mo">/ month</div></div>
+        </div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Full 30-day challenge</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Text, photo, voice &amp; video</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> XP, streaks &amp; all 12 badges</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Completion certificate</div>
+      </div>
+      <div class="plan-card pc-teal">
+        <div class="plan-row">
+          <div><div class="plan-badge">Family Plan</div><div class="plan-name">Family</div></div>
+          <div style="text-align:right"><div class="price">$19.99</div><div class="price-mo">/ month</div></div>
+        </div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Everything in Individual</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Up to 5 family members</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Shared family progress view</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Private family feed</div>
+      </div>
+      <div class="plan-card pc-black">
+        <div class="plan-row">
+          <div><div class="plan-badge">Best Value</div><div class="plan-name">Annual</div></div>
+          <div style="text-align:right"><div class="price">$79.99</div><div class="price-mo">/ year · Save 33%</div></div>
+        </div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> All Individual features</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Unlimited challenge resets</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Priority support</div>
+      </div>
+      <button class="btn btn-teal" onclick="go('s-home')">Start Free Trial</button>
+      <div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;padding-bottom:20px;">No charge until trial ends · Cancel anytime</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     S9 · COMPLETE
+════════════════════════ -->
+<div class="screen" id="s-complete">
+  <div class="sb" style="background:var(--yellow);color:var(--black);">
+    <span>9:41</span>
+    <div class="sb-icons"><div class="sb-dot"></div><div class="sb-dot"></div><div class="sb-dot"></div><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-wifi"/></svg></div>
+  </div>
+  <div class="complete-body">
+    <div class="complete-ico">
+      <svg width="88" height="88" style="color:var(--black);pointer-events:none"><use href="#i-sparkle"/></svg>
+    </div>
+    <div class="complete-title" id="complete-day">Day 8<br>Complete!</div>
+    <div class="complete-sub">You showed up for yourself today.</div>
+    <div class="xp-pill2" id="xp-earned">+ 50 XP Earned</div>
+    <div class="share-row">
+      <button class="share-btn"><svg width="20" height="20" style="color:var(--yellow);pointer-events:none"><use href="#i-share"/></svg>Share</button>
+      <button class="share-btn"><svg width="20" height="20" style="color:var(--yellow);pointer-events:none"><use href="#i-heart"/></svg>Community</button>
+      <button class="share-btn"><svg width="20" height="20" style="color:var(--yellow);pointer-events:none"><use href="#i-img"/></svg>Recap</button>
+    </div>
+    <button class="btn btn-black" onclick="go('s-home')">Back to Home</button>
+  </div>
+</div>
+
+</div><!-- /phone-viewport -->
+</div><!-- /phone -->
+
+<!-- NAV DOTS -->
+<div>
+  <div class="nav-dots">
+    <div class="ndot on"  onclick="go('s-splash')"    title="Splash"></div>
+    <div class="ndot"     onclick="go('s-onboard')"   title="Onboarding"></div>
+    <div class="ndot"     onclick="go('s-home')"      title="Home"></div>
+    <div class="ndot"     onclick="go('s-journal')"   title="Journal"></div>
+    <div class="ndot"     onclick="go('s-badges')"    title="Badges"></div>
+    <div class="ndot"     onclick="go('s-community')" title="Community"></div>
+    <div class="ndot"     onclick="go('s-profile')"   title="Profile"></div>
+    <div class="ndot"     onclick="go('s-subscribe')" title="Plans"></div>
+    <div class="ndot"     onclick="go('s-complete')"  title="Complete"></div>
+  </div>
+  <div class="dot-labels">Splash · Onboard · Home · Journal · Badges · Community · Profile · Plans · Complete</div>
+</div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+const ORDER = ['s-splash','s-onboard','s-home','s-journal','s-badges','s-community','s-profile','s-subscribe','s-complete'];
+let current = 's-splash';
+
+function go(id) {
+  if (id === current) return;
+  const prev = document.getElementById(current);
+  const next = document.getElementById(id);
+  if (!prev || !next) return;
+  const forward = ORDER.indexOf(id) >= ORDER.indexOf(current);
+  next.style.transition = 'none';
+  next.style.transform = forward ? 'translateX(100%)' : 'translateX(-30%)';
+  next.classList.add('active');
+  next.offsetHeight;
+  next.style.transition = '';
+  next.style.transform = 'translateX(0)';
+  prev.style.transition = 'transform .32s cubic-bezier(.4,0,.2,1)';
+  prev.style.transform = forward ? 'translateX(-30%)' : 'translateX(100%)';
+  setTimeout(() => { prev.classList.remove('active'); prev.style.transform = ''; prev.style.transition = ''; }, 340);
+  current = id;
+  document.querySelectorAll('.ndot').forEach((d,i) => d.classList.toggle('on', ORDER[i] === id));
+  if (id === 's-home') updateUI();
+}
+
+let tx0 = 0;
+const vp = document.getElementById('vp');
+vp.addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; }, {passive:true});
+vp.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx0;
+  const idx = ORDER.indexOf(current);
+  if (dx < -50 && idx < ORDER.length-1) go(ORDER[idx+1]);
+  if (dx >  50 && idx > 0)              go(ORDER[idx-1]);
+}, {passive:true});
+
+// ── 30 DAILY PROMPTS ──
+const PROMPTS = [
+  "What made you smile today?",
+  "Who in your life are you most grateful for, and why?",
+  "What simple pleasure do you often overlook?",
+  "Describe a challenge that made you stronger.",
+  "What part of your body are you grateful for today?",
+  "What opportunity are you most thankful for right now?",
+  "What is something beautiful you noticed recently?",
+  "What are you most grateful for this week?",
+  "Who has positively influenced your life?",
+  "What memory brings you the most joy?",
+  "What skill or talent are you grateful to have?",
+  "What about your home or environment are you thankful for?",
+  "What act of kindness did you experience recently?",
+  "What book, song, or piece of art are you grateful exists?",
+  "What technology makes your life meaningfully better?",
+  "What personal quality are you most grateful for?",
+  "What has nature given you that you appreciate?",
+  "What relationship in your life are you nurturing?",
+  "What lesson from a past mistake are you grateful for?",
+  "What dream or goal are you thankful to still have?",
+  "What is something you accomplished that you are proud of?",
+  "What simple food or drink are you grateful for today?",
+  "What has a stranger done that touched your heart?",
+  "What about today's weather or season do you enjoy?",
+  "What daily routine brings you the most peace?",
+  "What have you learned this month that you are grateful for?",
+  "What about your past shaped you in a positive way?",
+  "What moment from this week will you remember fondly?",
+  "What is something you once took for granted that you now appreciate?",
+  "You made it to Day 30. What has this journey taught you about gratitude?"
+];
+
+// ── BADGE DEFINITIONS ──
+const BADGES = [
+  { id:'first-light',  name:'First Light', icon:'i-sun',     desc:'Complete Day 1',     check: s => s.entries.length >= 1 },
+  { id:'on-fire',      name:'On Fire',     icon:'i-flame',   desc:'7-day streak',       check: s => s.streak >= 7 },
+  { id:'mind-full',    name:'Mind Full',   icon:'i-brain',   desc:'5 reflections',      check: s => s.entries.filter(e => e.reflection && e.reflection.length > 10).length >= 5 },
+  { id:'flow-state',   name:'Flow State',  icon:'i-wave',    desc:'14-day streak',      check: s => s.streak >= 14 },
+  { id:'golden',       name:'Golden',      icon:'i-star',    desc:'Day 20 done',        check: s => s.entries.length >= 20 },
+  { id:'champion',     name:'Champion',    icon:'i-trophy',  desc:'All 30 days',        check: s => s.entries.length >= 30 },
+  { id:'golden-tree',  name:'Golden Tree', icon:'i-tree',    desc:'Max tree stage',     check: s => s.entries.length >= 30 },
+  { id:'family',       name:'Family',      icon:'i-people',  desc:'Invite 2 members',   check: s => (s.invites||0) >= 2 },
+  { id:'share-joy',    name:'Share Joy',   icon:'i-share',   desc:'Share 3 posts',      check: s => (s.shares||0) >= 3 },
+  { id:'voice',        name:'Voice',       icon:'i-mic',     desc:'5 voice entries',    check: s => s.entries.filter(e => e.hasVoice).length >= 5 },
+  { id:'snapshot',     name:'Snapshot',    icon:'i-camera',  desc:'5 photo entries',    check: s => s.entries.filter(e => e.hasPhoto).length >= 5 },
+  { id:'legend',       name:'Legend',      icon:'i-sparkle', desc:'2nd challenge',      check: s => (s.challengeCount||0) >= 2 },
+];
+
+// ── TREE STAGES ──
+const TREES = [
+  { name:'Seed',        icon:'i-sprout', min:0  },
+  { name:'Seedling',    icon:'i-sprout', min:1  },
+  { name:'Sapling',     icon:'i-tree',   min:8  },
+  { name:'Tree',        icon:'i-tree',   min:16 },
+  { name:'Golden Tree', icon:'i-tree',   min:25 },
+];
+
+// ── STATE ──
+function defaultState() {
+  return { name:'Rafael', streak:0, xp:0, entries:[], badgesEarned:[], lastEntryDate:null, shares:0, invites:0, challengeCount:1 };
+}
+function loadState() {
+  try { const s = localStorage.getItem('gc-state'); return s ? JSON.parse(s) : defaultState(); }
+  catch(e) { return defaultState(); }
+}
+function saveState() { localStorage.setItem('gc-state', JSON.stringify(state)); }
+
+let state = loadState();
+
+// ── HELPERS ──
+function todayStr()   { return new Date().toISOString().slice(0,10); }
+function todayLabel() { return new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
+function greeting()   { const h = new Date().getHours(); return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'; }
+function sel(id)      { return document.getElementById(id); }
+function alreadyDoneToday() { return state.lastEntryDate === todayStr(); }
+function currentDay() { return Math.min(state.entries.length + 1, 30); }
+function currentPrompt() { return PROMPTS[Math.min(state.entries.length, 29)]; }
+function treeStage()  { for (let i = TREES.length-1; i >= 0; i--) { if (state.entries.length >= TREES[i].min) return TREES[i]; } return TREES[0]; }
+
+// ── UPDATE UI ──
+function updateUI() {
+  const day = currentDay();
+  const prompt = currentPrompt();
+  const tree = treeStage();
+  const earned = state.badgesEarned.length;
+  const done = alreadyDoneToday();
+
+  // Home
+  sel('home-greeting').textContent = greeting();
+  sel('home-name').textContent = state.name;
+  sel('streak-num').textContent = state.streak;
+  sel('xp-badge').textContent = state.xp + ' XP';
+  sel('home-daytag').textContent = `Day ${day} of 30 · Challenge #${day}`;
+  sel('home-prompt').textContent = done ? '✓ Today\'s entry is saved — see you tomorrow!' : prompt;
+  sel('progress-count').textContent = `${state.entries.length} / 30 Days`;
+  sel('tree-stage-name').textContent = tree.name;
+  sel('tree-fill').style.width = Math.min(100, (state.entries.length / 30) * 100) + '%';
+
+  // Write Now button state
+  const writeBtn = document.querySelector('.today-btn');
+  if (writeBtn) {
+    if (done) { writeBtn.textContent = '✓ Done Today'; writeBtn.style.background = 'var(--teal)'; writeBtn.style.color = '#fff'; }
+    else { writeBtn.textContent = 'Write Now'; writeBtn.style.background = 'var(--yellow)'; writeBtn.style.color = 'var(--black)'; }
+  }
+
+  // Progress dots
+  const dotsEl = sel('progress-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < state.entries.length ? ' done' : i === state.entries.length ? ' now' : '');
+    dotsEl.appendChild(d);
+  }
+
+  // Recent entries
+  const list = sel('recent-entries');
+  if (state.entries.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;font-weight:600;">No entries yet — start today!</div>';
+  } else {
+    list.innerHTML = [...state.entries].reverse().slice(0,3).map(e => `
+      <div class="entry-card" onclick="go('s-journal')">
+        <div class="entry-left"><div class="entry-day">Day ${e.day}</div><div class="entry-date">${e.dateLabel}</div></div>
+        <div class="entry-mid">
+          <div class="entry-prompt">${e.prompt}</div>
+          <div class="entry-preview">${e.reflection || (e.gratitudes && e.gratitudes[0]) || '...'}</div>
+        </div>
+        <div class="entry-icons"><svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-pen"/></svg></div>
+      </div>`).join('');
+  }
+
+  // Journal
+  sel('journal-daytag').textContent = `Day ${day} of 30`;
+  sel('journal-prompt').textContent = prompt;
+  sel('journal-body-daytag').textContent = `Today's Prompt · Day ${day} of 30`;
+  sel('journal-body-prompt').textContent = prompt;
+
+  // Profile
+  sel('profile-name').textContent = state.name + ' R.';
+  sel('profile-stage').textContent = tree.name + ' · Stage ' + (TREES.findIndex(t => t.name === tree.name) + 1) + ' of 5';
+  sel('profile-streak').textContent = state.streak;
+  sel('profile-xp').textContent = state.xp;
+  sel('profile-badges').textContent = earned;
+
+  // Badges
+  sel('badges-count').textContent = earned + ' of 12 earned';
+  sel('badges-xp').textContent = state.xp + ' XP';
+  sel('xp-bar-fill').style.width = Math.min(100, (state.xp / 1500) * 100) + '%';
+
+  // Badge earned/locked visuals (Home mini row + full Badges grid)
+  document.querySelectorAll('[data-badge]').forEach(el => {
+    const isEarned = state.badgesEarned.includes(el.dataset.badge);
+    if (el.classList.contains('badge-mini')) {
+      el.querySelector('.badge-ico').classList.toggle('on', isEarned);
+      el.querySelector('.badge-ico').classList.toggle('off', !isEarned);
+    } else if (el.classList.contains('badge-card')) {
+      el.classList.toggle('locked', !isEarned);
+    }
+  });
+}
+
+// ── SAVE ENTRY ──
+function saveEntry() {
+  if (alreadyDoneToday()) { go('s-home'); return; }
+
+  const day = currentDay();
+  const prompt = currentPrompt();
+  const reflection = document.querySelector('.jarea').value.trim();
+  const gratitudes = [...document.querySelectorAll('.grat-input')].map(i => i.value.trim()).filter(Boolean);
+
+  // Streak logic
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0,10);
+  state.streak = (state.lastEntryDate === yStr) ? state.streak + 1 : 1;
+
+  state.entries.push({ day, date: todayStr(), dateLabel: todayLabel(), prompt, reflection, gratitudes });
+  state.lastEntryDate = todayStr();
+  state.xp += 50;
+
+  // Check badges
+  BADGES.forEach(b => { if (!state.badgesEarned.includes(b.id) && b.check(state)) state.badgesEarned.push(b.id); });
+
+  saveState();
+  updateUI();
+
+  // Update complete screen
+  sel('complete-day').innerHTML = `Day ${day}<br>Complete!`;
+  sel('xp-earned').textContent = '+ 50 XP Earned';
+
+  // Clear journal inputs
+  document.querySelector('.jarea').value = '';
+  document.querySelectorAll('.grat-input').forEach(i => i.value = '');
+
+  go('s-complete');
+}
+
+// ── INIT ──
+updateUI();
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+}
+</script>
+</body>
+</html>
