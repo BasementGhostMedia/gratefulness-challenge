@@ -1088,7 +1088,10 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
       <div class="sb-icons"><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><div class="sb-dot" style="background:var(--white)"></div><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-wifi"/></svg></div>
     </div>
     <div class="profile-tree"><svg width="64" height="64" style="color:var(--yellow);pointer-events:none"><use href="#i-sprout"/></svg></div>
-    <div class="profile-name" id="profile-name">Rafael R.</div>
+    <div class="profile-name" onclick="editName()" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;justify-content:center;width:100%;">
+      <span id="profile-name">Rafael R.</span>
+      <svg width="14" height="14" style="color:rgba(255,255,255,.5);pointer-events:none"><use href="#i-pen"/></svg>
+    </div>
     <div class="profile-stage" id="profile-stage">Seedling · Stage 1 of 5</div>
     <div class="profile-stats">
       <div class="stat"><div class="stat-v" id="profile-streak">7</div><div class="stat-l">Streak</div></div>
@@ -1103,8 +1106,8 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
         <div class="plan-price">$19.99<span>/ month</span></div>
       </div>
       <div class="section-lbl-sm">Account</div>
-      <div class="menu-row">
-        <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-gear"/></svg></div><div class="menu-lbl">Settings</div></div>
+      <div class="menu-row" onclick="editName()">
+        <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-gear"/></svg></div><div class="menu-lbl">Edit Your Name</div></div>
         <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
       </div>
       <div class="menu-row">
@@ -1437,6 +1440,16 @@ function updateUI() {
       el.classList.toggle('locked', !isEarned);
     }
   });
+}
+
+// ── EDIT NAME ──
+function editName() {
+  const newName = prompt('What should we call you?', state.name);
+  if (newName && newName.trim()) {
+    state.name = newName.trim();
+    saveState();
+    updateUI();
+  }
 }
 
 // ── SAVE ENTRY ──
