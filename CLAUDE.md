@@ -4,8 +4,8 @@
 
 A mobile app prototype built as a single self-contained HTML file, plus a small PWA shell. It simulates a complete interactive app experience in the browser — no framework, no build step, no server needed beyond a static file server (required for the service worker to register). Just serve the folder and open the HTML file in Chrome.
 
-**File:** `gratefulness-challenge-app.html`
-**Logo:** `logo.png` — referenced by the HTML (`<img>` on splash/home, `apple-touch-icon`), `manifest.json`, and `sw.js`. *(Note: an earlier version of this doc called this asset `B&W logo. Transparent.png` — the code was updated to reference `logo.png` directly; keep using that filename.)*
+**File:** `index.html` is the real, canonical app file. `gratefulness-challenge-app.html` is a thin redirect stub (kept for old links/bookmarks) that meta-refreshes to `index.html` — don't edit the app in that file, it has no real content.
+**Logo:** `logo.png` — referenced by the HTML (`<img>` on splash/home), `manifest.json`, and `sw.js`. Sized icon variants live in `icons/` (see PWA Support below); `apple-touch-icon` and the manifest point at those, not the raw `logo.png`.
 
 ---
 
@@ -93,8 +93,9 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 
 ## PWA Support
 
-- `manifest.json` — installable web-app manifest (name, theme color `#FCCC06`, icon `logo.png`).
-- `sw.js` — service worker that caches `gratefulness-challenge-app.html` and `logo.png` for offline use. Registers via `navigator.serviceWorker.register('./sw.js')` at the bottom of the HTML's `<script>`.
+- `manifest.json` — installable web-app manifest (name, theme color `#FCCC06`), with `icons/icon-192.png` / `icon-512.png` (purpose `any`) and `icon-192-maskable.png` / `icon-512-maskable.png` (purpose `maskable`, logo scaled to ~70% with white padding so Android's circular mask doesn't clip it). Regenerate with `sips` from `logo.png` if the logo changes — see git history for the exact commands.
+- `sw.js` — service worker with a **network-first** strategy for navigations (so a new deploy is visible immediately) and **cache-first** for static assets (logo, icons). Registers via `navigator.serviceWorker.register('./sw.js')` at the bottom of the HTML's `<script>`.
+- **Bump the `CACHE` version string in `sw.js` on every deploy that changes cached assets** — otherwise returning visitors can get served a stale cache. (This bit us once already — see git log.)
 - **Service worker registration requires the file to be served over `http(s)://`** — it will silently fail to register when opened directly via `file://`. Use a static server (e.g. `npx serve`, `python3 -m http.server`) to test PWA behavior.
 
 ---
@@ -105,28 +106,33 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 - Navigation works (click, swipe, nav dots, back buttons)
 - Brand colors and Montserrat font applied throughout
 - Line-art SVG icons throughout (no emoji)
-- Real logo (`logo.png`) referenced on splash and home avatar
+- Real logo (`logo.png`) referenced on splash and home avatar; proper multi-size + maskable app icons in `icons/`
 - **Real data persistence via `localStorage`** — streaks, XP, entries, and earned badges survive a reload
 - 30-day prompt rotation, badge-earning logic, and tree-stage progression are functionally complete
+- **Dates are computed in local time** (`localDateStr()`), not UTC — streaks and once-per-day gating no longer break near midnight for users outside UTC
+- Past entries are viewable read-only via a detail modal (`viewEntry(day)` / `closeEntryModal()`), triggered from Home's Recent Entries and Profile's "Past Journals" row
+- Every not-yet-built control (media buttons, share buttons, most Profile menu rows, Subscribe's CTA) shows a "Coming soon" toast (`comingSoon()` / `toast()`) instead of silently doing nothing
 - Community feed and "Recent Entries" beyond the current session are still hardcoded/sample data
 
 ---
 
 ## What's Not Built Yet
 
-- Actual media capture (camera/mic/video) — buttons are present but not wired
-- User authentication
+- Actual media capture (camera/mic/video) — buttons show a "coming soon" toast
+- User authentication, server-side accounts/sync
 - Push notifications
 - Real community feed (live/shared data — currently static sample posts)
 - Sharing / certificate generation
-- Payment processing for subscriptions (plan selection UI only)
+- Payment processing for subscriptions (plan selection UI only, CTA shows "coming soon")
 - App store submission
+
+See `docs/PRD.md`, `docs/ROADMAP.md`, and `docs/LAUNCH-CHECKLIST.md` for the full phased plan to v1.0 — this file only tracks the current prototype's implementation, not the roadmap.
 
 ---
 
 ## How to Run
 
-1. Serve this folder with a static file server (needed for the service worker to register) — e.g. `npx serve` or `python3 -m http.server`, then open `gratefulness-challenge-app.html` in Chrome.
+1. Serve this folder with a static file server (needed for the service worker to register) — e.g. `npx serve` or `python3 -m http.server`, then open `index.html` (or just the root URL) in Chrome.
    - Opening the file directly via `file://` also works for the UI/nav/localStorage, but the service worker will not register.
 2. The phone shell renders at 390×844px centered on the page.
 3. Click any nav item, button, or use the dots below the phone to navigate.
@@ -139,14 +145,19 @@ No build step, no npm install required.
 ## File Layout
 
 ```
-The Gratefulness Challenge/
-├── gratefulness-challenge-app.html   ← entire app (HTML + CSS + JS in one file)
-├── manifest.json                     ← PWA manifest
-├── sw.js                             ← service worker (offline caching)
-├── logo.png                          ← brand logo (PNG with transparency)
-├── sessionhandoff.docx               ← original brief with full feature spec
-└── CLAUDE.md                         ← this file
+The Gratefulness App 0.1 2026/
+├── index.html                         ← entire app (HTML + CSS + JS in one file) — edit this one
+├── gratefulness-challenge-app.html     ← redirect stub to index.html (legacy filename, don't edit)
+├── manifest.json                       ← PWA manifest
+├── sw.js                               ← service worker (network-first HTML, cache-first assets)
+├── logo.png                            ← brand logo source (flat RGB, white background)
+├── icons/                              ← generated icon sizes (192/512, incl. maskable variants)
+├── docs/                               ← PRD.md, ROADMAP.md, LAUNCH-CHECKLIST.md (path to v1.0)
+├── sessionhandoff.docx                 ← original brief with full feature spec
+└── CLAUDE.md                           ← this file
 ```
+
+**Note:** this working copy is a git repo pushed to `github.com/BasementGhostMedia/gratefulness-challenge` and deployed live via GitHub Pages. A separate copy lives at `~/Documents/Claude/Projects/The Gratefulness Challenge/` (uses the original `gratefulness-challenge-app.html` filename directly, no redirect stub) — keep both in sync when making changes.
 
 ---
 

@@ -3,13 +3,13 @@
 Companion to [PRD.md](PRD.md) and [ROADMAP.md](ROADMAP.md). Work through top to bottom; items marked **(v0.2)** apply to the prototype-hardening release, the rest gate v1.0.
 
 ## QA / Functional
-- [ ] **(v0.2)** Entry saved at 11:55pm and 12:05am local time land on different days; streak math correct across the boundary (currently fails — UTC bug)
-- [ ] **(v0.2)** Second save attempt same day is blocked with clear messaging
-- [ ] **(v0.2)** Streak resets to 1 after a missed day; badge predicates fire exactly once
-- [ ] **(v0.2)** All 30 prompts cycle correctly; Day 30 → completion state (verify by seeding `gc-state`)
-- [ ] **(v0.2)** Tree stage changes at entry counts 1 / 8 / 16 / 25
-- [ ] **(v0.2)** App updates propagate after a service-worker deploy (bump cache name, verify old cache purged)
-- [ ] **(v0.2)** Works on iOS Safari, Android Chrome, desktop Chrome; installs to home screen on both platforms; offline launch works
+- [x] **(v0.2)** Entry saved at 11:55pm and 12:05am local time land on different days; streak math correct across the boundary (fixed: `todayStr()`/streak "yesterday" check now use `localDateStr()` instead of `toISOString()`; verified live against the actual UTC/local offset)
+- [x] **(v0.2)** Second save attempt same day is blocked with clear messaging (verified: second `saveEntry()` call is a no-op, redirects to Home which shows "✓ Today's entry is saved — see you tomorrow!")
+- [x] **(v0.2)** Streak resets to 1 after a missed day; badge predicates fire exactly once (verified via seeded Day-30 run: Champion + Golden Tree badges each added exactly once, no duplicates)
+- [x] **(v0.2)** All 30 prompts cycle correctly; Day 30 → completion state (verified by seeding `gc-state` with 29 entries and saving Day 30 — correct final prompt, completion screen, badges)
+- [x] **(v0.2)** Tree stage changes at entry counts 1 / 8 / 16 / 25 (verified: Seed→Seedling→Sapling→Tree→Golden Tree transition exactly at 1/8/16/25)
+- [x] **(v0.2)** App updates propagate after a service-worker deploy (bump cache name, verify old cache purged) (verified: bumping `CACHE` to `gc-v5` and reloading purged `gc-v4` from the Cache Storage; also switched to network-first for HTML so this class of bug is much less likely going forward)
+- [ ] **(v0.2)** Works on iOS Safari, Android Chrome, desktop Chrome; installs to home screen on both platforms; offline launch works — **only verified on desktop Chrome (automated) this pass**; real iOS Safari / Android Chrome device testing still needed
 - [ ] Sync: entry created offline appears on second device after reconnect (v0.5)
 - [ ] Guest → account upgrade preserves entries, XP, streak, badges (v0.5)
 - [ ] Notification arrives at chosen local time; none after entry done (v0.5)
@@ -32,7 +32,7 @@ Companion to [PRD.md](PRD.md) and [ROADMAP.md](ROADMAP.md). Work through top to 
 - [ ] Store secrets (Stripe, VAPID, service keys) outside the repo
 
 ## Product Polish
-- [ ] Real app icons (192/512/maskable) + iOS splash screens
+- [~] Real app icons (192/512/maskable) done (`icons/`); iOS splash screens still needed
 - [ ] Empty/edge states: first-run home, feed with no posts, expired subscription
 - [ ] Loading + error states for every network call
 - [ ] Accessibility pass: contrast (yellow on white is risky), focus order, labels on icon-only buttons, reduced-motion
