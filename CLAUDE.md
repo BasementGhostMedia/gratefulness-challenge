@@ -97,6 +97,25 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 - `sw.js` — service worker with a **network-first** strategy for navigations (so a new deploy is visible immediately) and **cache-first** for static assets (logo, icons). Registers via `navigator.serviceWorker.register('./sw.js')` at the bottom of the HTML's `<script>`.
 - **Bump the `CACHE` version string in `sw.js` on every deploy that changes cached assets** — otherwise returning visitors can get served a stale cache. (This bit us once already — see git log.)
 - **Service worker registration requires the file to be served over `http(s)://`** — it will silently fail to register when opened directly via `file://`. Use a static server (e.g. `npx serve`, `python3 -m http.server`) to test PWA behavior.
+- The service worker deliberately **never caches `*.supabase.co` requests** — API data must stay live.
+
+---
+
+## Backend (Supabase) — added in v0.5
+
+Project: `gratefulness-challenge` (ref `uemgwlrimezwzrsubxdb`, us-east-1, free tier) in "BasementGhostMedia's Org". The client config (URL + publishable key, safe to embed) is in the `── BACKEND (Supabase) ──` section of the app's `<script>`; supabase-js v2 is loaded via a pinned jsdelivr UMD `<script>` in `<head>`.
+
+**Two modes:**
+- **Guest (no account):** identical to the old behavior — everything in `localStorage` (`gc-state`), client-side streak/XP/badge logic (`localApplySave()`).
+- **Signed in:** server-authoritative. `saveEntry()` calls the `save_entry` RPC; streak/XP/badges/once-per-day are computed in Postgres and the client applies the returned truth (`applyServerSave()`). Boot hydrates from the server (`loadRemote()`); `localStorage` is just an offline cache. Entries saved while offline queue in `gc-pending` and flush on reconnect (`flushPending()`).
+
+**Schema (all RLS-protected):**
+- `profiles` — 1:1 with `auth.users` (auto-created by trigger `handle_new_user`): name, streak, xp, last_entry_date, badges_earned[], shares, invites, challenge_count. Clients can only directly UPDATE the `name` column (column-level grant); all stats change only via RPCs.
+- `entries` — day (1–30), entry_date, prompt, reflection, gratitudes jsonb. `UNIQUE(user_id, entry_date)` + `UNIQUE(user_id, day)`. Clients can only SELECT their own; INSERT/UPDATE/DELETE are revoked entirely (immutable journal, writes only through RPCs).
+- RPCs (SECURITY DEFINER, scoped to `auth.uid()`, authenticated-only): `save_entry(p_local_date, p_prompt, p_reflection, p_gratitudes)` and `migrate_guest_data(p_name, p_entries)` (one-time guest import, refuses if the account already has entries). `compute_badges(uuid)` is internal (not callable by clients).
+- Security advisors show two expected WARNs (the two RPCs are intentionally client-callable SECURITY DEFINER functions — that's the design since direct table writes are revoked).
+
+**Auth:** email + password only. **"Confirm email" is currently ON** (Supabase default) — real users get a confirmation email before they can sign in; the client shows "Check your email" after signup. Toggle it off in Dashboard → Authentication for instant beta signups (test accounts were confirmed via SQL). Guest→account migration: on first sign-in, if local entries exist and the account is empty, they're pushed via `migrate_guest_data` and the old local state is kept at `gc-state-backup`.
 
 ---
 
@@ -110,6 +129,7 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 - **Real data persistence via `localStorage`** — streaks, XP, entries, and earned badges survive a reload
 - 30-day prompt rotation, badge-earning logic, and tree-stage progression are functionally complete
 - **Dates are computed in local time** (`localDateStr()`), not UTC — streaks and once-per-day gating no longer break near midnight for users outside UTC
+- **Real accounts + cross-device sync (v0.5):** email/password sign-in via Supabase, server-authoritative streak/XP/badges, guest→account data migration, offline save queue — see the Backend section
 - Past entries are viewable read-only via a detail modal (`viewEntry(day)` / `closeEntryModal()`), triggered from Home's Recent Entries and Profile's "Past Journals" row
 - Every not-yet-built control (media buttons, share buttons, most Profile menu rows, Subscribe's CTA) shows a "Coming soon" toast (`comingSoon()` / `toast()`) instead of silently doing nothing
 - Community feed and "Recent Entries" beyond the current session are still hardcoded/sample data
@@ -119,7 +139,7 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 ## What's Not Built Yet
 
 - Actual media capture (camera/mic/video) — buttons show a "coming soon" toast
-- User authentication, server-side accounts/sync
+- Google/Apple OAuth sign-in (email+password works; see Backend section)
 - Push notifications
 - Real community feed (live/shared data — currently static sample posts)
 - Sharing / certificate generation

@@ -10,10 +10,10 @@ Companion to [PRD.md](PRD.md) and [ROADMAP.md](ROADMAP.md). Work through top to 
 - [x] **(v0.2)** Tree stage changes at entry counts 1 / 8 / 16 / 25 (verified: Seed→Seedling→Sapling→Tree→Golden Tree transition exactly at 1/8/16/25)
 - [x] **(v0.2)** App updates propagate after a service-worker deploy (bump cache name, verify old cache purged) (verified: bumping `CACHE` to `gc-v5` and reloading purged `gc-v4` from the Cache Storage; also switched to network-first for HTML so this class of bug is much less likely going forward)
 - [ ] **(v0.2)** Works on iOS Safari, Android Chrome, desktop Chrome; installs to home screen on both platforms; offline launch works — **only verified on desktop Chrome (automated) this pass**; real iOS Safari / Android Chrome device testing still needed
-- [ ] Sync: entry created offline appears on second device after reconnect (v0.5)
-- [ ] Guest → account upgrade preserves entries, XP, streak, badges (v0.5)
-- [ ] Notification arrives at chosen local time; none after entry done (v0.5)
-- [ ] Private entry never visible in feed or via API with another user's token — test with RLS (v0.8)
+- [~] Sync (v0.5): wiped-device sign-in restores full progress from server — **verified**. Offline queue (`gc-pending`, flush on reconnect) is implemented but the offline→reconnect path hasn't been exercised end-to-end yet
+- [x] Guest → account upgrade preserves entries, XP, streak, badges (v0.5) — verified: 2 seeded guest entries migrated via `migrate_guest_data`, streak/XP/badges recomputed server-side correctly
+- [ ] Notification arrives at chosen local time; none after entry done (v0.5 — deferred to next session)
+- [~] Private entry never visible via API with another user's token (RLS) — **verified at the API layer** (account B sees zero of account A's rows; direct insert/update/delete and XP forgery all blocked). Re-verify when the feed ships (v0.8)
 - [ ] Payment lifecycle: subscribe, feature unlock, cancel, expiry re-lock (v1.0)
 
 ## Privacy, Legal, Trust (journal entries = sensitive personal data)

@@ -1,4 +1,4 @@
-const CACHE = 'gc-v5';
+const CACHE = 'gc-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  // Never cache Supabase API traffic — live data must stay live.
+  if (new URL(e.request.url).hostname.endsWith('.supabase.co')) return;
 
   // Network-first for navigations (the HTML shell) so deploys show up immediately.
   if (e.request.mode === 'navigate') {

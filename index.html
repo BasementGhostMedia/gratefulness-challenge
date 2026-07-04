@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Gratefulness Challenge</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -570,6 +571,14 @@ svg { pointer-events:none; display:block; }
 .entry-modal-grats { display:flex; flex-direction:column; gap:8px; }
 .entry-modal-grats .grat-row { background:var(--light); }
 
+/* ── AUTH MODAL ── */
+.auth-input {
+  width:100%; background:var(--light); border:none; border-radius:12px;
+  padding:13px 14px; font-family:'Montserrat',sans-serif; font-size:14px; font-weight:600;
+  color:var(--black); outline:none;
+}
+.auth-input:focus { outline:2px solid var(--teal); background:#EDFEFF; }
+
 @media(max-width:480px){
   body{padding:0;align-items:flex-start;}
   .phone{width:100vw;height:100svh;border-radius:0;}
@@ -703,7 +712,7 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
     <div class="splash-headline">30 Days<br>To A<br>New You</div>
     <div class="splash-sub">Brain + Heart = Gratitude</div>
     <button class="btn btn-black" onclick="go('s-onboard')">Start Your Journey</button>
-    <button class="btn btn-outline" onclick="go('s-home')">I Already Have An Account</button>
+    <button class="btn btn-outline" onclick="openAuth()">I Already Have An Account</button>
   </div>
 </div>
 
@@ -1131,6 +1140,10 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
         <div class="plan-price">$19.99<span>/ month</span></div>
       </div>
       <div class="section-lbl-sm">Account</div>
+      <div class="menu-row" onclick="authRowClick()">
+        <div class="menu-left"><div class="menu-ico ico-b"><svg width="16" height="16" style="color:var(--yellow);pointer-events:none"><use href="#i-person"/></svg></div><div class="menu-lbl" id="auth-row-label" style="text-transform:none">Sign In / Create Account</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
       <div class="menu-row" onclick="editName()">
         <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-gear"/></svg></div><div class="menu-lbl">Edit Your Name</div></div>
         <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
@@ -1267,6 +1280,25 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
     <div class="entry-modal-grats" id="em-grats"></div>
   </div>
 </div>
+
+<!-- AUTH MODAL (sign in / create account) -->
+<div class="entry-modal" id="auth-modal" onclick="if(event.target===this) closeAuth()">
+  <div class="entry-modal-card">
+    <div class="entry-modal-hd">
+      <div class="entry-modal-daytag">Your Account</div>
+      <div class="back-btn" onclick="closeAuth()"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-back"/></svg></div>
+    </div>
+    <div class="entry-modal-prompt" style="margin-bottom:16px;">Sign In or<br>Create Account</div>
+    <div class="field-lbl">Email</div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email">
+    <div class="field-lbl" style="margin-top:12px">Password</div>
+    <input class="auth-input" id="auth-password" type="password" placeholder="At least 6 characters" autocomplete="current-password">
+    <div id="auth-error" style="color:#D33;font-size:11px;font-weight:700;margin-top:10px;min-height:14px;"></div>
+    <button class="btn btn-black" style="margin-top:10px" onclick="doAuth('signin')">Sign In</button>
+    <button class="btn btn-outline" onclick="doAuth('signup')">Create Account</button>
+    <div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;margin-top:14px;">Your journal syncs privately to your account — only you can read it.</div>
+  </div>
+</div>
 </div><!-- /phone -->
 
 <!-- NAV DOTS -->
@@ -1392,6 +1424,130 @@ function saveState() { localStorage.setItem('gc-state', JSON.stringify(state)); 
 
 let state = loadState();
 
+// ── BACKEND (Supabase) ──
+// Guest mode (no account) runs entirely on localStorage, exactly as before.
+// Signed in: streak/XP/badges are server-authoritative via the save_entry RPC;
+// localStorage becomes an offline cache of server truth.
+const SB_URL = 'https://uemgwlrimezwzrsubxdb.supabase.co';
+const SB_KEY = 'sb_publishable_-XLIsCWrFEthkZntADyTiQ_UH8tWhYF';
+const db = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+let session = null;
+
+function labelForDate(ds) { return new Date(ds + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
+
+async function loadRemote() {
+  const [{ data: profile, error: pErr }, { data: rows, error: eErr }] = await Promise.all([
+    db.from('profiles').select('*').single(),
+    db.from('entries').select('*').order('day')
+  ]);
+  if (pErr || eErr || !profile) return false;
+  state = {
+    name: profile.name,
+    streak: profile.streak,
+    xp: profile.xp,
+    entries: (rows || []).map(r => ({ day: r.day, date: r.entry_date, dateLabel: labelForDate(r.entry_date), prompt: r.prompt, reflection: r.reflection, gratitudes: r.gratitudes || [] })),
+    badgesEarned: profile.badges_earned || [],
+    lastEntryDate: profile.last_entry_date,
+    shares: profile.shares,
+    invites: profile.invites,
+    challengeCount: profile.challenge_count
+  };
+  saveState();
+  return true;
+}
+
+function applyServerSave(res) {
+  const p = res.profile, e = res.entry;
+  state.streak = p.streak;
+  state.xp = p.xp;
+  state.badgesEarned = p.badges_earned || [];
+  state.lastEntryDate = p.last_entry_date;
+  if (e) state.entries.push({ day: e.day, date: e.entry_date, dateLabel: labelForDate(e.entry_date), prompt: e.prompt, reflection: e.reflection, gratitudes: e.gratitudes || [] });
+  saveState();
+}
+
+// Offline queue: entries saved while unreachable sync on reconnect
+function queuePending(payload) {
+  const q = JSON.parse(localStorage.getItem('gc-pending') || '[]');
+  q.push(payload);
+  localStorage.setItem('gc-pending', JSON.stringify(q));
+}
+async function flushPending() {
+  if (!session || !db) return;
+  const q = JSON.parse(localStorage.getItem('gc-pending') || '[]');
+  if (!q.length) return;
+  const remaining = [];
+  for (const item of q) {
+    try {
+      const { error } = await db.rpc('save_entry', item);
+      if (error && !/already_saved_today|challenge_complete|invalid_date/.test(error.message || '')) remaining.push(item);
+    } catch (e) { remaining.push(item); }
+  }
+  localStorage.setItem('gc-pending', JSON.stringify(remaining));
+  if (remaining.length < q.length) { await loadRemote(); updateUI(); }
+}
+window.addEventListener('online', flushPending);
+
+// ── AUTH ──
+function openAuth() { sel('auth-error').textContent = ''; sel('auth-modal').classList.add('open'); }
+function closeAuth() { sel('auth-modal').classList.remove('open'); }
+function authRowClick() {
+  if (session) { if (confirm('Sign out of your account?')) signOut(); }
+  else openAuth();
+}
+
+async function doAuth(mode) {
+  if (!db) { toast('No internet connection'); return; }
+  const email = sel('auth-email').value.trim();
+  const password = sel('auth-password').value;
+  const errEl = sel('auth-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Enter your email and a password.'; return; }
+
+  const guest = JSON.parse(JSON.stringify(state));
+  let resp;
+  try {
+    resp = (mode === 'signup')
+      ? await db.auth.signUp({ email, password, options: { data: { name: guest.name } } })
+      : await db.auth.signInWithPassword({ email, password });
+  } catch (e) { errEl.textContent = 'Connection failed — try again.'; return; }
+
+  if (resp.error) { errEl.textContent = resp.error.message; return; }
+  if (!resp.data.session) { errEl.textContent = 'Check your email to confirm your account, then sign in here.'; return; }
+
+  session = resp.data.session;
+  await afterSignIn(guest);
+}
+
+async function afterSignIn(guest) {
+  try {
+    if (guest && guest.entries && guest.entries.length) {
+      const { count } = await db.from('entries').select('*', { count: 'exact', head: true });
+      if (count === 0) {
+        await db.rpc('migrate_guest_data', { p_name: guest.name, p_entries: guest.entries });
+        localStorage.setItem('gc-state-backup', JSON.stringify(guest));
+      }
+    }
+  } catch (e) { /* migration is best-effort; server state still loads below */ }
+  await loadRemote();
+  await flushPending();
+  updateUI();
+  closeAuth();
+  toast('Signed in');
+  go('s-home');
+}
+
+async function signOut() {
+  if (db) { try { await db.auth.signOut(); } catch (e) {} }
+  session = null;
+  localStorage.removeItem('gc-state');
+  localStorage.removeItem('gc-pending');
+  state = loadState();
+  updateUI();
+  toast('Signed out');
+  go('s-splash');
+}
+
 // ── HELPERS ──
 function localDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function todayStr()   { return localDateStr(new Date()); }
@@ -1482,6 +1638,10 @@ function updateUI() {
       el.classList.toggle('locked', !isEarned);
     }
   });
+
+  // Account row
+  const authLbl = sel('auth-row-label');
+  if (authLbl) authLbl.textContent = session ? `Sign Out (${session.user.email})` : 'Sign In / Create Account';
 }
 
 // ── ENTRY DETAIL MODAL ──
@@ -1528,46 +1688,82 @@ function editName() {
     state.name = newName.trim();
     saveState();
     updateUI();
+    if (session && db) db.from('profiles').update({ name: state.name }).eq('id', session.user.id).then(() => {});
   }
 }
 
 // ── SAVE ENTRY ──
-function saveEntry() {
+// Applies the entry locally (guest mode, or offline fallback when signed in)
+function localApplySave(day, prompt, reflection, gratitudes) {
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = localDateStr(yesterday);
+  state.streak = (state.lastEntryDate === yStr) ? state.streak + 1 : 1;
+  state.entries.push({ day, date: todayStr(), dateLabel: todayLabel(), prompt, reflection, gratitudes });
+  state.lastEntryDate = todayStr();
+  state.xp += 50;
+  BADGES.forEach(b => { if (!state.badgesEarned.includes(b.id) && b.check(state)) state.badgesEarned.push(b.id); });
+  saveState();
+}
+
+let saving = false;
+async function saveEntry() {
+  if (saving) return;
   if (alreadyDoneToday()) { go('s-home'); return; }
+  saving = true;
 
   const day = currentDay();
   const prompt = currentPrompt();
   const reflection = document.querySelector('.jarea').value.trim();
   const gratitudes = [...document.querySelectorAll('.grat-input')].map(i => i.value.trim()).filter(Boolean);
 
-  // Streak logic
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const yStr = localDateStr(yesterday);
-  state.streak = (state.lastEntryDate === yStr) ? state.streak + 1 : 1;
+  try {
+    if (session && db) {
+      const payload = { p_local_date: todayStr(), p_prompt: prompt, p_reflection: reflection, p_gratitudes: gratitudes };
+      let error = null, data = null;
+      try { ({ data, error } = await db.rpc('save_entry', payload)); }
+      catch (e) { error = { message: 'network' }; }
 
-  state.entries.push({ day, date: todayStr(), dateLabel: todayLabel(), prompt, reflection, gratitudes });
-  state.lastEntryDate = todayStr();
-  state.xp += 50;
+      if (error) {
+        const msg = error.message || '';
+        if (msg.includes('already_saved_today')) { toast('Already saved today'); go('s-home'); return; }
+        if (msg.includes('challenge_complete')) { toast('Challenge complete!'); go('s-home'); return; }
+        if (msg.includes('invalid_date') || msg.includes('not_authenticated')) { toast('Could not save — try again'); return; }
+        // Unreachable server → save locally now, sync when back online
+        queuePending(payload);
+        localApplySave(day, prompt, reflection, gratitudes);
+        toast('Saved offline — will sync');
+      } else {
+        applyServerSave(data);
+      }
+    } else {
+      localApplySave(day, prompt, reflection, gratitudes);
+    }
 
-  // Check badges
-  BADGES.forEach(b => { if (!state.badgesEarned.includes(b.id) && b.check(state)) state.badgesEarned.push(b.id); });
-
-  saveState();
-  updateUI();
-
-  // Update complete screen
-  sel('complete-day').innerHTML = `Day ${day}<br>Complete!`;
-  sel('xp-earned').textContent = '+ 50 XP Earned';
-
-  // Clear journal inputs
-  document.querySelector('.jarea').value = '';
-  document.querySelectorAll('.grat-input').forEach(i => i.value = '');
-
-  go('s-complete');
+    updateUI();
+    sel('complete-day').innerHTML = `Day ${day}<br>Complete!`;
+    sel('xp-earned').textContent = '+ 50 XP Earned';
+    document.querySelector('.jarea').value = '';
+    document.querySelectorAll('.grat-input').forEach(i => i.value = '');
+    go('s-complete');
+  } finally {
+    saving = false;
+  }
 }
 
 // ── INIT ──
-updateUI();
+updateUI(); // immediate render from local cache
+(async function init() {
+  if (!db) return; // offline first load or CDN blocked → guest mode
+  try {
+    const { data } = await db.auth.getSession();
+    session = data.session || null;
+    if (session) {
+      const ok = await loadRemote();
+      if (ok) updateUI();
+      flushPending();
+    }
+  } catch (e) { /* stay on local cache */ }
+})();
 
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
