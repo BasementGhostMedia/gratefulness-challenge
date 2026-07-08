@@ -91,8 +91,8 @@ Display-only / not functional: Sign In, media capture buttons (photo/voice/video
 
 ### 5.7 Pricing (P1) — revised July 2026 (owner decision)
 - **Free, forever:** the complete solo experience — full 30-day challenge, daily journal + gratitudes, streaks/XP/all badges/tree, community feed, and unlimited repeat runs. No trial clocks, no core features behind a paywall, usable forever.
-- **Family $19.99/mo** — the only paid tier. Up to 5 family members, private family feed, shared progress view, and the premium feature set for every member: photo/voice/video entries, streak freeze (one forgiven miss per challenge), printable completion certificate.
-- **Family Annual $199.99/yr** — same plan, two months free (~17% off), priority support.
+- **Family $9.99/mo** — the only paid tier. Up to 5 family members, private family feed, shared progress view, and the premium feature set for every member: photo/voice/video entries, streak freeze (one forgiven miss per challenge), printable completion certificate.
+- **Family Annual $99.99/yr** — same plan, two months free (~17% off), priority support.
 - Rationale: the solo habit loop is the growth engine and stays free; monetization comes from households doing it together, with media entries as the premium hook.
 - Web: Stripe. App stores: StoreKit / Play Billing (required if distributed there).
 - **Acceptance:** upgrade/downgrade/cancel flows work; entitlements enforce feature gates server-side (media upload rejected server-side for free accounts).
