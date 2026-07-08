@@ -13,7 +13,7 @@ A mobile app prototype built as a single self-contained HTML file, plus a small 
 
 "30 Days to a New You" — a 30-day gratitude journaling challenge app.
 
-Users complete a daily prompt for 30 consecutive days. They earn XP, build streaks, unlock badges, grow a virtual tree avatar, and can share entries with a community feed. There's a subscription model with Individual, Family, and Annual plans.
+Users complete a daily prompt for 30 consecutive days. They earn XP, build streaks, unlock badges, grow a virtual tree avatar, and can share entries with a community feed. The core app is free forever; the only paid tier is a Family plan (monthly or annual) that adds family features and unlocks media entries.
 
 ---
 
@@ -42,7 +42,7 @@ Users complete a daily prompt for 30 consecutive days. They earn XP, build strea
 | `s-badges` | Badges | XP bar, 12-badge grid (earned vs. locked, computed from real state) |
 | `s-community` | Community | Feed of user posts with likes and replies |
 | `s-profile` | Profile | Tree avatar, stats (streak/XP/badges), upgrade banner, settings menu rows |
-| `s-subscribe` | Plans | Individual $9.99/mo, Family $19.99/mo, Annual $79.99/yr |
+| `s-subscribe` | Plans | Free (forever, full core app), Family $19.99/mo, Family Annual $199.99/yr |
 | `s-complete` | Day Complete | Celebration screen after saving a journal entry, XP earned, share buttons |
 
 ---
@@ -85,7 +85,7 @@ State lives in `localStorage` under the key `gc-state` (see `defaultState()`, `l
 - **Tree Stages:** `TREES` array — Seed → Seedling → Sapling → Tree → Golden Tree, gated on total entry count (0 / 1 / 8 / 16 / 25).
 - **12 Badges:** `BADGES` array, each with a `check(state)` predicate evaluated on every save: First Light, On Fire, Mind Full, Flow State, Golden, Champion, Golden Tree, Family, Share Joy, Voice, Snapshot, Legend.
 - **30 daily prompts:** `PROMPTS` array, indexed by entry count, cycling through Day 1–30 content.
-- **Subscription (display only, not wired to payments):** Individual $9.99/mo · Family $19.99/mo · Annual $79.99/yr.
+- **Pricing (display only, not wired to payments):** the core app is **free forever** (full challenge, streaks/XP/badges/tree, community, repeat runs). The only paid tier is **Family — $19.99/mo or $199.99/yr** (up to 5 members, private family feed, shared progress) which also unlocks the premium features: photo/voice/video entries (journal media buttons carry a crown badge and a `familyFeature()` toast), streak freeze, printable certificate.
 
 `updateUI()` re-renders Home, Journal, Profile, and Badges from `state` on load and after every save. Saving is once-per-day (`alreadyDoneToday()` blocks a second entry the same day).
 
@@ -143,7 +143,7 @@ Project: `gratefulness-challenge` (ref `uemgwlrimezwzrsubxdb`, us-east-1, free t
 - Push notifications
 - Real community feed (live/shared data — currently static sample posts)
 - Sharing / certificate generation
-- Payment processing for subscriptions (plan selection UI only, CTA shows "coming soon")
+- Payment processing for the Family plan (plan selection UI only, CTA shows "coming soon")
 - App store submission
 
 See `docs/PRD.md`, `docs/ROADMAP.md`, and `docs/LAUNCH-CHECKLIST.md` for the full phased plan to v1.0 — this file only tracks the current prototype's implementation, not the roadmap.

@@ -47,7 +47,7 @@ Working today:
 - Installable as an app on your phone (PWA), works offline, syncs when you're back
 - Entries save offline and sync when you reconnect
 
-Coming next: daily reminder notifications, a live community feed with sharing, photo and voice entries, completion certificates, and subscription plans (Individual, Family, and Annual).
+Coming next: daily reminder notifications, a live community feed with sharing, photo and voice entries, completion certificates, and the Family plan. The core challenge is free forever. The only thing that ever costs money is the Family plan, which covers up to 5 people and unlocks photo, voice, and video entries plus a few extras.
 
 ## Tech
 

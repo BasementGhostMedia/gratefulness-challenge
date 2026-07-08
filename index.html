@@ -356,7 +356,12 @@ svg { pointer-events:none; display:block; }
   flex:1; background:var(--light); border:2px dashed #ccc;
   border-radius:14px; padding:14px 8px;
   display:flex; flex-direction:column; align-items:center; gap:6px;
-  cursor:pointer;
+  cursor:pointer; position:relative;
+}
+.media-crown {
+  position:absolute; top:5px; right:5px;
+  width:16px; height:16px; background:var(--yellow);
+  border-radius:5px; display:flex; align-items:center; justify-content:center;
 }
 .media-lbl { font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
 
@@ -946,15 +951,18 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
       <div>
         <div class="field-lbl" style="margin-bottom:10px">Add Media</div>
         <div class="media-grid">
-          <div class="media-btn" onclick="comingSoon('Photo attachments')">
+          <div class="media-btn" onclick="familyFeature('Photo entries')">
+            <div class="media-crown"><svg width="10" height="10" style="color:var(--black);pointer-events:none"><use href="#i-crown"/></svg></div>
             <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-camera"/></svg>
             <div class="media-lbl">Photo</div>
           </div>
-          <div class="media-btn" onclick="comingSoon('Voice memos')">
+          <div class="media-btn" onclick="familyFeature('Voice memos')">
+            <div class="media-crown"><svg width="10" height="10" style="color:var(--black);pointer-events:none"><use href="#i-crown"/></svg></div>
             <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-mic"/></svg>
             <div class="media-lbl">Voice</div>
           </div>
-          <div class="media-btn" onclick="comingSoon('Video entries')">
+          <div class="media-btn" onclick="familyFeature('Video entries')">
+            <div class="media-crown"><svg width="10" height="10" style="color:var(--black);pointer-events:none"><use href="#i-crown"/></svg></div>
             <svg width="24" height="24" style="color:var(--teal);pointer-events:none"><use href="#i-video"/></svg>
             <div class="media-lbl">Video</div>
           </div>
@@ -1136,7 +1144,7 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
   <div class="scrollable">
     <div class="profile-body">
       <div class="plan-banner" onclick="go('s-subscribe')">
-        <div class="plan-text"><h3>Upgrade to Family</h3><p>Add up to 5 members</p></div>
+        <div class="plan-text"><h3>Upgrade to Family</h3><p>5 members · photos, voice &amp; video</p></div>
         <div class="plan-price">$19.99<span>/ month</span></div>
       </div>
       <div class="section-lbl-sm">Account</div>
@@ -1199,42 +1207,44 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
       </div>
       <div style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.4);">Choose Your Plan</div>
     </div>
-    <h2>Unlock Your<br>Full Journey</h2>
-    <p>30-day free trial · Cancel anytime</p>
+    <h2>Free For Everyone,<br>Forever</h2>
+    <p>The challenge is free. Upgrade to bring your family along.</p>
   </div>
   <div class="scrollable">
     <div class="sub-body">
       <div class="plan-card pc-yellow">
         <div class="plan-row">
-          <div><div class="plan-badge">Most Popular</div><div class="plan-name">Individual</div></div>
-          <div style="text-align:right"><div class="price">$9.99</div><div class="price-mo">/ month</div></div>
+          <div><div class="plan-badge">Yours Forever</div><div class="plan-name">Free</div></div>
+          <div style="text-align:right"><div class="price">$0</div><div class="price-mo">forever</div></div>
         </div>
         <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Full 30-day challenge</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Text, photo, voice &amp; video</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> XP, streaks &amp; all 12 badges</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Completion certificate</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Daily journal &amp; 3 gratitudes</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> XP, streaks, all 12 badges &amp; your tree</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Community feed</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--black);pointer-events:none"><use href="#i-check"/></svg> Repeat the challenge as many times as you want</div>
       </div>
       <div class="plan-card pc-teal">
         <div class="plan-row">
-          <div><div class="plan-badge">Family Plan</div><div class="plan-name">Family</div></div>
+          <div><div class="plan-badge">Everything Unlocked</div><div class="plan-name">Family</div></div>
           <div style="text-align:right"><div class="price">$19.99</div><div class="price-mo">/ month</div></div>
         </div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Everything in Individual</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Up to 5 family members</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Shared family progress view</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Private family feed</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Everything in Free, for up to 5 family members</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Photo, voice &amp; video entries</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Private family feed &amp; shared progress</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Streak freeze — one forgiven miss per challenge</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--white);pointer-events:none"><use href="#i-check"/></svg> Printable completion certificate</div>
       </div>
       <div class="plan-card pc-black">
         <div class="plan-row">
-          <div><div class="plan-badge">Best Value</div><div class="plan-name">Annual</div></div>
-          <div style="text-align:right"><div class="price">$79.99</div><div class="price-mo">/ year · Save 33%</div></div>
+          <div><div class="plan-badge">Two Months Free</div><div class="plan-name">Family Annual</div></div>
+          <div style="text-align:right"><div class="price">$199.99</div><div class="price-mo">/ year · Save 17%</div></div>
         </div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> All Individual features</div>
-        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Unlimited challenge resets</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Everything in Family</div>
+        <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Two months free vs. monthly</div>
         <div class="plan-feature"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg> Priority support</div>
       </div>
-      <button class="btn btn-teal" onclick="comingSoon('Subscriptions')">Start Free Trial</button>
-      <div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;padding-bottom:20px;">No charge until trial ends · Cancel anytime</div>
+      <button class="btn btn-teal" onclick="comingSoon('Family plan checkout')">Start Family Plan</button>
+      <div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;padding-bottom:20px;">The 30-day challenge is free forever · Cancel Family anytime</div>
     </div>
   </div>
 </div>
@@ -1680,6 +1690,7 @@ function toast(msg) {
   t._hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 1800);
 }
 function comingSoon(feature) { toast((feature || 'This feature') + ' — coming soon'); }
+function familyFeature(feature) { toast((feature || 'This') + ' — a Family plan feature, coming soon'); }
 
 // ── EDIT NAME ──
 function editName() {

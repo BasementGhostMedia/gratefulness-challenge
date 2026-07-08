@@ -89,13 +89,13 @@ Display-only / not functional: Sign In, media capture buttons (photo/voice/video
 - Mid-challenge share cards for streak milestones (7/14/21).
 - **Acceptance:** certificate renders with correct user data; share produces an image, not a link to private content.
 
-### 5.7 Subscriptions (P1)
-- Free: one 30-day challenge, core mechanics.
-- **Individual $9.99/mo** — unlimited challenges/repeat runs, photo attachments, streak freeze, full entry export.
-- **Family $19.99/mo** — Individual × up to 6 accounts + family circle.
-- **Annual $79.99/yr** — Individual, ~33% discount.
+### 5.7 Pricing (P1) — revised July 2026 (owner decision)
+- **Free, forever:** the complete solo experience — full 30-day challenge, daily journal + gratitudes, streaks/XP/all badges/tree, community feed, and unlimited repeat runs. No trial clocks, no core features behind a paywall, usable forever.
+- **Family $19.99/mo** — the only paid tier. Up to 5 family members, private family feed, shared progress view, and the premium feature set for every member: photo/voice/video entries, streak freeze (one forgiven miss per challenge), printable completion certificate.
+- **Family Annual $199.99/yr** — same plan, two months free (~17% off), priority support.
+- Rationale: the solo habit loop is the growth engine and stays free; monetization comes from households doing it together, with media entries as the premium hook.
 - Web: Stripe. App stores: StoreKit / Play Billing (required if distributed there).
-- **Acceptance:** upgrade/downgrade/cancel flows work; entitlements enforce feature gates server-side.
+- **Acceptance:** upgrade/downgrade/cancel flows work; entitlements enforce feature gates server-side (media upload rejected server-side for free accounts).
 
 ### 5.8 Settings, Privacy & Data (P0)
 - Export my data (JSON + readable text), delete my account (full erasure), notification preferences, privacy policy & ToS links.
@@ -119,7 +119,7 @@ Display-only / not functional: Sign In, media capture buttons (photo/voice/video
 ---
 
 ## 8. Open Questions
-1. Can a user run a second 30-day challenge for free, or is repeat-run the paywall? (PRD assumes paywall.)
+1. ~~Can a user run a second 30-day challenge for free, or is repeat-run the paywall?~~ **Resolved July 2026: repeat runs are free forever; the Family plan is the only paywall (see §5.7).**
 2. Family plan: shared challenge (same start date) or independent challenges with a shared feed?
 3. Certificate: real name vs. display name?
 4. App store presence at launch, or PWA-only until traction?
