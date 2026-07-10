@@ -18,7 +18,7 @@ Companion to [PRD.md](PRD.md) and [ROADMAP.md](ROADMAP.md). Work through top to 
 
 ## Privacy, Legal, Trust (journal entries = sensitive personal data)
 - [ ] Privacy policy + Terms of Service published and linked in-app
-- [ ] Data export (JSON + readable text) and full account deletion, honored ≤ 30 days
+- [~] Data export (JSON + readable text) and full account deletion, honored ≤ 30 days — local export + device reset are implemented in Profile; server-side account deletion still needs a backend/admin flow
 - [ ] Encryption at rest; TLS everywhere; no journal content in analytics events or logs
 - [ ] Community moderation live before feed opens: report, block, filter, takedown SLA
 - [ ] Age gate / COPPA position decided (Family plan implies minors)
@@ -33,9 +33,9 @@ Companion to [PRD.md](PRD.md) and [ROADMAP.md](ROADMAP.md). Work through top to 
 
 ## Product Polish
 - [~] Real app icons (192/512/maskable) done (`icons/`); iOS splash screens still needed
-- [ ] Empty/edge states: first-run home, feed with no posts, expired subscription
-- [ ] Loading + error states for every network call
-- [ ] Accessibility pass: contrast (yellow on white is risky), focus order, labels on icon-only buttons, reduced-motion
+- [~] Empty/edge states: first-run home, feed with no posts, expired subscription — first-run home and feed empty states are implemented; expired subscription still pending
+- [~] Loading + error states for every network call — journal save/auth have user-facing errors and save disabled state; broader network error audit still pending
+- [~] Accessibility pass: contrast (yellow on white is risky), focus order, labels on icon-only buttons, reduced-motion — keyboard focus, reduced-motion, and selected labels improved; full screen-reader/contrast audit still pending
 - [ ] Copy pass on notifications and paywall
 
 ## Launch Marketing (minimum)

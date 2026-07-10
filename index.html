@@ -99,6 +99,18 @@ svg { pointer-events:none; display:block; }
 .btn-black { background:var(--black); color:var(--yellow); }
 .btn-outline { background:transparent; color:var(--black); border:2.5px solid var(--black); margin-top:12px; }
 .btn-teal { background:var(--teal); color:var(--white); }
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+.nav-item:focus-visible,
+.entry-card:focus-visible,
+.menu-row:focus-visible,
+.back-btn:focus-visible,
+.media-btn:focus-visible,
+.today-card:focus-visible {
+  outline:3px solid var(--teal);
+  outline-offset:3px;
+}
 
 /* ── BOTTOM NAV ── */
 .nav {
@@ -575,6 +587,30 @@ svg { pointer-events:none; display:block; }
 .entry-modal-text { background:var(--light); border-radius:14px; padding:14px; font-size:13px; font-weight:500; color:var(--black); line-height:1.6; }
 .entry-modal-grats { display:flex; flex-direction:column; gap:8px; }
 .entry-modal-grats .grat-row { background:var(--light); }
+.empty-state {
+  background:var(--white);
+  border-radius:16px;
+  padding:18px 16px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+  line-height:1.6;
+  box-shadow:0 1px 6px rgba(0,0,0,.06);
+}
+.field-error {
+  color:#B00020;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.4;
+  min-height:16px;
+}
+.btn[disabled],
+.save-btn[disabled] {
+  cursor:not-allowed;
+  opacity:.6;
+  transform:none;
+}
 
 /* ── AUTH MODAL ── */
 .auth-input {
@@ -587,6 +623,16 @@ svg { pointer-events:none; display:block; }
 @media(max-width:480px){
   body{padding:0;align-items:flex-start;}
   .phone{width:100vw;height:100svh;border-radius:0;}
+}
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after {
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+    transition-duration:.01ms !important;
+  }
 }
 </style>
 </head>
@@ -716,8 +762,8 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
     <div class="brand-eyebrow">The Gratefulness Challenge™</div>
     <div class="splash-headline">30 Days<br>To A<br>New You</div>
     <div class="splash-sub">Brain + Heart = Gratitude</div>
-    <button class="btn btn-black" onclick="go('s-onboard')">Start Your Journey</button>
-    <button class="btn btn-outline" onclick="openAuth()">I Already Have An Account</button>
+    <button class="btn btn-black" onclick="go('s-onboard')" aria-label="Start onboarding">Start Your Journey</button>
+    <button class="btn btn-outline" onclick="openAuth()" aria-label="Open account sign in">I Already Have An Account</button>
   </div>
 </div>
 
@@ -763,7 +809,7 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
     </div>
     <div class="home-toprow">
       <div><div class="home-greeting" id="home-greeting">Good Morning</div><div class="home-name" id="home-name">Rafael</div></div>
-      <div class="avatar" onclick="go('s-profile')">
+      <div class="avatar" onclick="go('s-profile')" role="button" tabindex="0" aria-label="Open profile">
         <img src="logo.png" alt="logo" style="width:28px;height:28px;object-fit:contain;pointer-events:none;filter:invert(1);">
       </div>
     </div>
@@ -779,11 +825,11 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
   <div class="scrollable">
     <div class="home-body">
       <div class="section-label">Today's Prompt</div>
-      <div class="today-card" onclick="go('s-journal')">
+      <div class="today-card" onclick="openTodayJournal()" role="button" tabindex="0" aria-label="Open today's journal prompt">
         <div class="today-daytag" id="home-daytag">Day 8 of 30 · Challenge #8</div>
         <div class="today-prompt" id="home-prompt">What are you most grateful for this week?</div>
         <div class="today-row">
-          <button class="today-btn" onclick="event.stopPropagation();go('s-journal')">Write Now</button>
+          <button class="today-btn" onclick="event.stopPropagation();openTodayJournal()">Write Now</button>
           <div class="today-icons">
             <svg width="18" height="18" style="color:rgba(255,255,255,.45);pointer-events:none"><use href="#i-pen"/></svg>
             <svg width="18" height="18" style="color:rgba(255,255,255,.45);pointer-events:none"><use href="#i-mic"/></svg>
@@ -968,9 +1014,10 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
           </div>
         </div>
       </div>
+      <div id="journal-error" class="field-error" aria-live="polite"></div>
       <button class="save-btn" onclick="saveEntry()">
         <svg width="18" height="18" style="color:var(--yellow);pointer-events:none"><use href="#i-check"/></svg>
-        Save Today's Entry
+        <span id="save-btn-label">Save Today's Entry</span>
       </button>
     </div>
   </div>
@@ -1065,49 +1112,14 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
   </div>
   <div class="scrollable">
     <div class="comm-body">
-      <div class="post">
-        <div class="post-top">
-          <div class="post-av y"><svg width="18" height="18" style="color:var(--black);pointer-events:none"><use href="#i-smile"/></svg></div>
-          <div><div class="post-name">Maria G.</div><div class="post-meta">Day 12 · 2h ago</div></div>
-        </div>
-        <div class="post-body">Today I'm grateful for my morning coffee and the quiet before everyone wakes up. It's the small things that carry you through the big days.</div>
-        <div class="post-actions">
-          <div class="post-act liked"><svg width="14" height="14" style="color:var(--yellow);pointer-events:none"><use href="#i-heart"/></svg> 24</div>
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 3 replies</div>
-        </div>
+      <div style="background:var(--white);border-radius:18px;padding:32px 22px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+        <svg width="44" height="44" style="color:var(--teal);pointer-events:none;margin:0 auto 14px;"><use href="#i-people"/></svg>
+        <div style="font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--black);margin-bottom:8px;">The feed opens soon</div>
+        <div style="font-size:12px;font-weight:500;color:var(--muted);line-height:1.7;">When the community launches, entries people choose to share will show up here — with likes and replies to cheer each other on.</div>
       </div>
-      <div class="post">
-        <div class="post-top">
-          <div class="post-av t"><svg width="18" height="18" style="color:var(--white);pointer-events:none"><use href="#i-person"/></svg></div>
-          <div><div class="post-name">James T.</div><div class="post-meta">Day 8 · 5h ago</div></div>
-        </div>
-        <div class="post-body">Just finished Day 8 and this challenge is rewiring how I see everything. Grateful for my health, my family, and being alive one more day.</div>
-        <div class="post-actions">
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 18</div>
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 7 replies</div>
-        </div>
-      </div>
-      <div class="post">
-        <div class="post-top">
-          <div class="post-av b"><svg width="18" height="18" style="color:var(--yellow);pointer-events:none"><use href="#i-sparkle"/></svg></div>
-          <div><div class="post-name">Aisha M.</div><div class="post-meta">Day 22 · 8h ago</div></div>
-        </div>
-        <div class="post-body">Day 22 check-in! My tree is a sapling now. I can literally feel the difference in my mood since I started. Keep going everyone!</div>
-        <div class="post-actions">
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 41</div>
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 12 replies</div>
-        </div>
-      </div>
-      <div class="post">
-        <div class="post-top">
-          <div class="post-av y"><svg width="18" height="18" style="color:var(--black);pointer-events:none"><use href="#i-sprout"/></svg></div>
-          <div><div class="post-name">DeShawn R.</div><div class="post-meta">Day 30 · Yesterday</div></div>
-        </div>
-        <div class="post-body">I DID IT. 30 days. My golden tree is glowing. Thank you to everyone in this community who kept me going. This challenge changed my life.</div>
-        <div class="post-actions">
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-heart"/></svg> 89</div>
-          <div class="post-act"><svg width="14" height="14" style="pointer-events:none"><use href="#i-chat"/></svg> 34 replies</div>
-        </div>
+      <div style="background:var(--black);border-radius:18px;padding:18px 20px;display:flex;align-items:center;gap:14px;">
+        <svg width="24" height="24" style="color:var(--yellow);pointer-events:none;flex-shrink:0;"><use href="#i-book"/></svg>
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.75);line-height:1.6;">Your journal is <span style="color:var(--yellow);font-weight:800;">private</span>. Nothing you write is ever shared unless you choose to share it.</div>
       </div>
     </div>
   </div>
@@ -1167,6 +1179,14 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
       <div class="section-lbl-sm">My Journey</div>
       <div class="menu-row" onclick="go('s-home')">
         <div class="menu-left"><div class="menu-ico ico-y"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-book"/></svg></div><div class="menu-lbl">Past Journals</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row" onclick="exportData()">
+        <div class="menu-left"><div class="menu-ico ico-t"><svg width="16" height="16" style="color:var(--white);pointer-events:none"><use href="#i-share"/></svg></div><div class="menu-lbl">Export My Data</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
+      <div class="menu-row" onclick="resetLocalData()">
+        <div class="menu-left"><div class="menu-ico ico-g"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-back"/></svg></div><div class="menu-lbl">Reset This Device</div></div>
         <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
       </div>
       <div class="menu-row" onclick="comingSoon('Certificates')">
@@ -1303,7 +1323,8 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
     <input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email">
     <div class="field-lbl" style="margin-top:12px">Password</div>
     <input class="auth-input" id="auth-password" type="password" placeholder="At least 6 characters" autocomplete="current-password">
-    <div id="auth-error" style="color:#D33;font-size:11px;font-weight:700;margin-top:10px;min-height:14px;"></div>
+    <div style="text-align:right;margin-top:8px;"><span onclick="forgotPassword()" style="font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;">Forgot password?</span></div>
+    <div id="auth-error" style="color:#D33;font-size:11px;font-weight:700;margin-top:6px;min-height:14px;"></div>
     <button class="btn btn-black" style="margin-top:10px" onclick="doAuth('signin')">Sign In</button>
     <button class="btn btn-outline" onclick="doAuth('signup')">Create Account</button>
     <div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;margin-top:14px;">Your journal syncs privately to your account — only you can read it.</div>
@@ -1498,6 +1519,26 @@ async function flushPending() {
 }
 window.addEventListener('online', flushPending);
 
+// Password-recovery links from reset emails land back here with a recovery session
+if (db) {
+  db.auth.onAuthStateChange(async (event, sess) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      session = sess;
+      const np = prompt('Welcome back! Choose a new password (at least 6 characters):');
+      if (np && np.length >= 6) {
+        const { error } = await db.auth.updateUser({ password: np });
+        if (error) { toast('Could not update password — try again'); return; }
+        toast('Password updated — you are signed in');
+        await loadRemote();
+        updateUI();
+        go('s-home');
+      } else if (np !== null) {
+        toast('Password must be at least 6 characters');
+      }
+    }
+  });
+}
+
 // ── AUTH ──
 function openAuth() { sel('auth-error').textContent = ''; sel('auth-modal').classList.add('open'); }
 function closeAuth() { sel('auth-modal').classList.remove('open'); }
@@ -1506,11 +1547,22 @@ function authRowClick() {
   else openAuth();
 }
 
+async function forgotPassword() {
+  if (!db) { toast('No internet connection'); return; }
+  const email = sel('auth-email').value.trim();
+  const errEl = sel('auth-error');
+  if (!email) { errEl.style.color = '#D33'; errEl.textContent = 'Enter your email above first, then tap "Forgot password?"'; return; }
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  errEl.style.color = error ? '#D33' : 'var(--teal)';
+  errEl.textContent = error ? error.message : 'Reset link sent — check your email.';
+}
+
 async function doAuth(mode) {
   if (!db) { toast('No internet connection'); return; }
   const email = sel('auth-email').value.trim();
   const password = sel('auth-password').value;
   const errEl = sel('auth-error');
+  errEl.style.color = '#D33';
   errEl.textContent = '';
   if (!email || !password) { errEl.textContent = 'Enter your email and a password.'; return; }
 
@@ -1564,10 +1616,20 @@ function todayStr()   { return localDateStr(new Date()); }
 function todayLabel() { return new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
 function greeting()   { const h = new Date().getHours(); return h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening'; }
 function sel(id)      { return document.getElementById(id); }
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 function alreadyDoneToday() { return state.lastEntryDate === todayStr(); }
+function challengeComplete() { return state.entries.length >= 30; }
 function currentDay() { return Math.min(state.entries.length + 1, 30); }
 function currentPrompt() { return PROMPTS[Math.min(state.entries.length, 29)]; }
 function treeStage()  { for (let i = TREES.length-1; i >= 0; i--) { if (state.entries.length >= TREES[i].min) return TREES[i]; } return TREES[0]; }
+function openTodayJournal() {
+  if (challengeComplete()) { toast('Challenge complete — your 30 days are saved'); go('s-profile'); return; }
+  if (alreadyDoneToday()) { toast('Already saved today'); go('s-home'); return; }
+  sel('journal-error').textContent = '';
+  go('s-journal');
+}
 
 // ── UPDATE UI ──
 function updateUI() {
@@ -1576,6 +1638,7 @@ function updateUI() {
   const tree = treeStage();
   const earned = state.badgesEarned.length;
   const done = alreadyDoneToday();
+  const complete = challengeComplete();
 
   // Home
   sel('home-greeting').textContent = greeting();
@@ -1583,7 +1646,7 @@ function updateUI() {
   sel('streak-num').textContent = state.streak;
   sel('xp-badge').textContent = state.xp + ' XP';
   sel('home-daytag').textContent = `Day ${day} of 30 · Challenge #${day}`;
-  sel('home-prompt').textContent = done ? '✓ Today\'s entry is saved — see you tomorrow!' : prompt;
+  sel('home-prompt').textContent = complete ? 'Your 30-day challenge is complete. Your tree is fully grown.' : done ? '✓ Today\'s entry is saved — see you tomorrow!' : prompt;
   sel('progress-count').textContent = `${state.entries.length} / 30 Days`;
   sel('tree-stage-name').textContent = tree.name;
   sel('tree-fill').style.width = Math.min(100, (state.entries.length / 30) * 100) + '%';
@@ -1591,7 +1654,8 @@ function updateUI() {
   // Write Now button state
   const writeBtn = document.querySelector('.today-btn');
   if (writeBtn) {
-    if (done) { writeBtn.textContent = '✓ Done Today'; writeBtn.style.background = 'var(--teal)'; writeBtn.style.color = '#fff'; }
+    if (complete) { writeBtn.textContent = 'Complete'; writeBtn.style.background = 'var(--teal)'; writeBtn.style.color = '#fff'; }
+    else if (done) { writeBtn.textContent = '✓ Done Today'; writeBtn.style.background = 'var(--teal)'; writeBtn.style.color = '#fff'; }
     else { writeBtn.textContent = 'Write Now'; writeBtn.style.background = 'var(--yellow)'; writeBtn.style.color = 'var(--black)'; }
   }
 
@@ -1607,14 +1671,14 @@ function updateUI() {
   // Recent entries
   const list = sel('recent-entries');
   if (state.entries.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;font-weight:600;">No entries yet — start today!</div>';
+    list.innerHTML = '<div class="empty-state">No entries yet. Start today and your saved reflections will appear here.</div>';
   } else {
     list.innerHTML = [...state.entries].reverse().slice(0,3).map(e => `
       <div class="entry-card" onclick="viewEntry(${e.day})">
-        <div class="entry-left"><div class="entry-day">Day ${e.day}</div><div class="entry-date">${e.dateLabel}</div></div>
+        <div class="entry-left"><div class="entry-day">Day ${e.day}</div><div class="entry-date">${esc(e.dateLabel)}</div></div>
         <div class="entry-mid">
-          <div class="entry-prompt">${e.prompt}</div>
-          <div class="entry-preview">${e.reflection || (e.gratitudes && e.gratitudes[0]) || '...'}</div>
+          <div class="entry-prompt">${esc(e.prompt)}</div>
+          <div class="entry-preview">${esc(e.reflection || (e.gratitudes && e.gratitudes[0]) || '...')}</div>
         </div>
         <div class="entry-icons"><svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-pen"/></svg></div>
       </div>`).join('');
@@ -1627,7 +1691,7 @@ function updateUI() {
   sel('journal-body-prompt').textContent = prompt;
 
   // Profile
-  sel('profile-name').textContent = state.name + ' R.';
+  sel('profile-name').textContent = state.name;
   sel('profile-stage').textContent = tree.name + ' · Stage ' + (TREES.findIndex(t => t.name === tree.name) + 1) + ' of 5';
   sel('profile-streak').textContent = state.streak;
   sel('profile-xp').textContent = state.xp;
@@ -1666,7 +1730,7 @@ function viewEntry(day) {
   if (entry.gratitudes && entry.gratitudes.length) {
     sel('em-grats-lbl').style.display = '';
     gratsEl.style.display = '';
-    gratsEl.innerHTML = entry.gratitudes.map((g,i) => `<div class="grat-row"><div class="grat-num">${i+1}</div><div>${g}</div></div>`).join('');
+    gratsEl.innerHTML = entry.gratitudes.map((g,i) => `<div class="grat-row"><div class="grat-num">${i+1}</div><div>${esc(g)}</div></div>`).join('');
   } else {
     sel('em-grats-lbl').style.display = 'none';
     gratsEl.style.display = 'none';
@@ -1691,6 +1755,62 @@ function toast(msg) {
 }
 function comingSoon(feature) { toast((feature || 'This feature') + ' — coming soon'); }
 function familyFeature(feature) { toast((feature || 'This') + ' — a Family plan feature, coming soon'); }
+
+// ── DATA EXPORT / LOCAL RESET ──
+function readableExport(s) {
+  const lines = [
+    'The Gratefulness Challenge Export',
+    'Generated: ' + new Date().toLocaleString(),
+    '',
+    'Name: ' + s.name,
+    'Streak: ' + s.streak,
+    'XP: ' + s.xp,
+    'Badges: ' + ((s.badgesEarned || []).join(', ') || 'none'),
+    '',
+    'Entries'
+  ];
+  (s.entries || []).forEach(e => {
+    lines.push('', `Day ${e.day} - ${e.dateLabel || e.date || ''}`, e.prompt || '');
+    if (e.reflection) lines.push('', e.reflection);
+    if (e.gratitudes && e.gratitudes.length) {
+      lines.push('', 'Gratitudes:');
+      e.gratitudes.forEach((g,i) => lines.push(`${i + 1}. ${g}`));
+    }
+  });
+  return lines.join('\n');
+}
+function downloadFile(name, type, body) {
+  const blob = new Blob([body], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportData() {
+  const stamp = todayStr();
+  downloadFile(`gratefulness-export-${stamp}.json`, 'application/json', JSON.stringify(state, null, 2));
+  downloadFile(`gratefulness-export-${stamp}.txt`, 'text/plain', readableExport(state));
+  toast('Export downloaded');
+}
+function resetLocalData() {
+  const msg = session
+    ? 'This signs you out and clears cached data on this device. Your synced account data stays on the server.'
+    : 'This permanently clears the journal data stored on this device.';
+  if (!confirm(msg + '\n\nContinue?')) return;
+  if (db && session) db.auth.signOut().catch(() => {});
+  session = null;
+  localStorage.removeItem('gc-state');
+  localStorage.removeItem('gc-pending');
+  state = defaultState();
+  saveState();
+  updateUI();
+  toast('Device data reset');
+  go('s-splash');
+}
 
 // ── EDIT NAME ──
 function editName() {
@@ -1719,13 +1839,23 @@ function localApplySave(day, prompt, reflection, gratitudes) {
 let saving = false;
 async function saveEntry() {
   if (saving) return;
+  sel('journal-error').textContent = '';
+  if (challengeComplete()) { toast('Challenge complete!'); go('s-profile'); return; }
   if (alreadyDoneToday()) { go('s-home'); return; }
-  saving = true;
 
   const day = currentDay();
   const prompt = currentPrompt();
   const reflection = document.querySelector('.jarea').value.trim();
   const gratitudes = [...document.querySelectorAll('.grat-input')].map(i => i.value.trim()).filter(Boolean);
+  if (!reflection && gratitudes.length === 0) {
+    sel('journal-error').textContent = 'Write a reflection or add at least one gratitude before saving.';
+    return;
+  }
+  saving = true;
+  const saveBtn = document.querySelector('.save-btn');
+  const saveLabel = sel('save-btn-label');
+  if (saveBtn) saveBtn.disabled = true;
+  if (saveLabel) saveLabel.textContent = 'Saving...';
 
   try {
     if (session && db) {
@@ -1758,8 +1888,19 @@ async function saveEntry() {
     go('s-complete');
   } finally {
     saving = false;
+    if (saveBtn) saveBtn.disabled = false;
+    if (saveLabel) saveLabel.textContent = 'Save Today\'s Entry';
   }
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (!e.target || !e.target.closest) return;
+  const target = e.target.closest('[role="button"], .entry-card, .menu-row, .back-btn, .media-btn, .today-card');
+  if (!target) return;
+  e.preventDefault();
+  target.click();
+});
 
 // ── INIT ──
 updateUI(); // immediate render from local cache

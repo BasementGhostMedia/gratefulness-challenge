@@ -40,7 +40,7 @@ Users complete a daily prompt for 30 consecutive days. They earn XP, build strea
 | `s-home` | Home | Greeting, streak pill, XP badge, Today's Prompt card, 30-day progress dots, tree avatar, recent entries list, badge previews, bottom nav |
 | `s-journal` | Journal | Back button, today's prompt, reflection textarea, 3 gratitude inputs, photo/voice/video media buttons, Save button |
 | `s-badges` | Badges | XP bar, 12-badge grid (earned vs. locked, computed from real state) |
-| `s-community` | Community | Feed of user posts with likes and replies |
+| `s-community` | Community | Empty-state preview for the upcoming feed, with a privacy reminder |
 | `s-profile` | Profile | Tree avatar, stats (streak/XP/badges), upgrade banner, settings menu rows |
 | `s-subscribe` | Plans | Free (forever, full core app), Family $9.99/mo, Family Annual $99.99/yr |
 | `s-complete` | Day Complete | Celebration screen after saving a journal entry, XP earned, share buttons |
@@ -132,7 +132,9 @@ Project: `gratefulness-challenge` (ref `uemgwlrimezwzrsubxdb`, us-east-1, free t
 - **Real accounts + cross-device sync (v0.5):** email/password sign-in via Supabase, server-authoritative streak/XP/badges, guest→account data migration, offline save queue — see the Backend section
 - Past entries are viewable read-only via a detail modal (`viewEntry(day)` / `closeEntryModal()`), triggered from Home's Recent Entries and Profile's "Past Journals" row
 - Every not-yet-built control (media buttons, share buttons, most Profile menu rows, Subscribe's CTA) shows a "Coming soon" toast (`comingSoon()` / `toast()`) instead of silently doing nothing
-- Community feed and "Recent Entries" beyond the current session are still hardcoded/sample data
+- Community now shows an empty state instead of fake posts, so private journal content is not implied to be public
+- Profile includes local export (`JSON` + readable `.txt`) and a device reset action; full server-side account deletion still needs a backend RPC/admin flow
+- Guest mode now stops at 30 entries instead of allowing repeat Day-30 saves, and journal text is escaped before rendering in lists/modals
 
 ---
 
