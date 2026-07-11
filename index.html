@@ -733,6 +733,9 @@ textarea:focus-visible,
   <symbol id="i-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
   </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+  </symbol>
 </svg>
 
 <!-- helper shorthand -->
@@ -1463,20 +1466,95 @@ const SB_URL = 'https://uemgwlrimezwzrsubxdb.supabase.co';
 const SB_KEY = 'sb_publishable_-XLIsCWrFEthkZntADyTiQ_UH8tWhYF';
 const db = (typeof window.supabase !== 'undefined') ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 let session = null;
+let encKey = null; // AES-GCM CryptoKey derived from the user's password — never leaves this device
+
+// ── END-TO-END ENCRYPTION (Web Crypto, no libraries) ──
+// Journal reflections/gratitudes are encrypted in the browser with a key
+// derived from the user's own password (PBKDF2 → AES-GCM 256). The server
+// only ever stores ciphertext, so nobody — including the project owner —
+// can read journal content from the database.
+function b64FromBuf(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
+function bufFromB64(b64) {
+  const s = atob(b64);
+  const bytes = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes.buffer;
+}
+function genSaltB64() { return b64FromBuf(crypto.getRandomValues(new Uint8Array(16)).buffer); }
+async function deriveKey(password, saltB64) {
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: new Uint8Array(bufFromB64(saltB64)), iterations: 600000, hash: 'SHA-256' },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false, // non-extractable — the raw key bytes can never be exported
+    ['encrypt', 'decrypt']
+  );
+}
+async function encryptJSON(key, obj) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
+  return { blob: b64FromBuf(ct), iv: b64FromBuf(iv.buffer) };
+}
+async function decryptJSON(key, blobB64, ivB64) {
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(bufFromB64(ivB64)) }, key, bufFromB64(blobB64));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+// IndexedDB key cache — CryptoKey objects are structured-clonable, so the
+// (non-extractable) key is stored directly, keyed by user id. This lets a
+// returning user skip re-typing their password on the same browser.
+function keyDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('gc-keys', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('keys');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function keyOp(mode, fn) {
+  return keyDB().then(kdb => new Promise((resolve, reject) => {
+    const tx = kdb.transaction('keys', mode);
+    const req = fn(tx.objectStore('keys'));
+    req.onsuccess = () => { resolve(req.result); kdb.close(); };
+    req.onerror = () => { reject(req.error); kdb.close(); };
+  })).catch(() => undefined);
+}
+function cacheKey(uid, key)  { return keyOp('readwrite', s => s.put(key, uid)); }
+function getCachedKey(uid)   { return keyOp('readonly',  s => s.get(uid)); }
+function clearCachedKey(uid) { return keyOp('readwrite', s => s.delete(uid)); }
 
 function labelForDate(ds) { return new Date(ds + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}); }
 
 async function loadRemote() {
   const [{ data: profile, error: pErr }, { data: rows, error: eErr }] = await Promise.all([
     db.from('profiles').select('*').single(),
-    db.from('entries').select('*').order('day')
+    db.from('entries').select('id, day, entry_date, prompt, enc_blob, enc_iv, reflection_length').order('day')
   ]);
   if (pErr || eErr || !profile) return false;
+  const entries = [];
+  for (const r of (rows || [])) {
+    let body = null;
+    if (encKey) {
+      try { body = await decryptJSON(encKey, r.enc_blob, r.enc_iv); } catch (e) { body = null; }
+    }
+    entries.push({
+      day: r.day, date: r.entry_date, dateLabel: labelForDate(r.entry_date), prompt: r.prompt,
+      reflection: body ? (body.reflection || '') : '',
+      gratitudes: body ? (body.gratitudes || []) : [],
+      locked: !body
+    });
+  }
   state = {
     name: profile.name,
     streak: profile.streak,
     xp: profile.xp,
-    entries: (rows || []).map(r => ({ day: r.day, date: r.entry_date, dateLabel: labelForDate(r.entry_date), prompt: r.prompt, reflection: r.reflection, gratitudes: r.gratitudes || [] })),
+    entries,
     badgesEarned: profile.badges_earned || [],
     lastEntryDate: profile.last_entry_date,
     shares: profile.shares,
@@ -1487,13 +1565,15 @@ async function loadRemote() {
   return true;
 }
 
-function applyServerSave(res) {
+function applyServerSave(res, plain) {
   const p = res.profile, e = res.entry;
   state.streak = p.streak;
   state.xp = p.xp;
   state.badgesEarned = p.badges_earned || [];
   state.lastEntryDate = p.last_entry_date;
-  if (e) state.entries.push({ day: e.day, date: e.entry_date, dateLabel: labelForDate(e.entry_date), prompt: e.prompt, reflection: e.reflection, gratitudes: e.gratitudes || [] });
+  // The server only stores ciphertext — the readable text comes from the
+  // plaintext still in scope on this device.
+  if (e) state.entries.push({ day: e.day, date: e.entry_date, dateLabel: labelForDate(e.entry_date), prompt: e.prompt, reflection: (plain && plain.reflection) || '', gratitudes: (plain && plain.gratitudes) || [] });
   saveState();
 }
 
@@ -1524,17 +1604,53 @@ if (db) {
   db.auth.onAuthStateChange(async (event, sess) => {
     if (event === 'PASSWORD_RECOVERY') {
       session = sess;
+      // If this device still holds the old key, we can re-encrypt every entry
+      // under the new password so nothing is lost.
+      const oldKey = (await getCachedKey(sess.user.id)) || null;
       const np = prompt('Welcome back! Choose a new password (at least 6 characters):');
-      if (np && np.length >= 6) {
-        const { error } = await db.auth.updateUser({ password: np });
-        if (error) { toast('Could not update password — try again'); return; }
-        toast('Password updated — you are signed in');
-        await loadRemote();
-        updateUI();
-        go('s-home');
-      } else if (np !== null) {
-        toast('Password must be at least 6 characters');
+      if (!np || np.length < 6) {
+        if (np !== null) toast('Password must be at least 6 characters');
+        return;
       }
+      const { error } = await db.auth.updateUser({ password: np });
+      if (error) { toast('Could not update password — try again'); return; }
+
+      const newSalt = genSaltB64();
+      let newKey = null;
+      try { newKey = await deriveKey(np, newSalt); } catch (e) {}
+
+      if (oldKey && newKey) {
+        // Same-device reset: decrypt with the old key, re-encrypt with the new one
+        try {
+          const { data: rows } = await db.from('entries').select('id, enc_blob, enc_iv');
+          const updates = [];
+          for (const r of (rows || [])) {
+            if (!r.enc_blob) continue;
+            const body = await decryptJSON(oldKey, r.enc_blob, r.enc_iv);
+            const enc = await encryptJSON(newKey, body);
+            updates.push({ id: r.id, enc_blob: enc.blob, enc_iv: enc.iv });
+          }
+          if (updates.length) await db.rpc('reencrypt_entries', { p_updates: updates });
+          await db.from('profiles').update({ encryption_salt: newSalt }).eq('id', sess.user.id);
+          encKey = newKey;
+          await cacheKey(sess.user.id, newKey);
+          toast('Password updated — your journal is still readable');
+        } catch (e) {
+          // Entries stay under the old key; keep using it on this device
+          encKey = oldKey;
+          toast('Password updated, but re-securing entries failed');
+        }
+      } else if (newKey) {
+        // Different-device reset: the old key derived from the old password is
+        // gone, so previously written entries cannot be decrypted anymore.
+        await db.from('profiles').update({ encryption_salt: newSalt }).eq('id', sess.user.id);
+        encKey = newKey;
+        await cacheKey(sess.user.id, newKey);
+        alert('Password updated.\n\nBecause your journal is end-to-end encrypted, entries written before today were protected by your old password — which nobody (not even us) can recover. Those entries will show as locked. New entries will work normally.');
+      }
+      await loadRemote();
+      updateUI();
+      go('s-home');
     }
   });
 }
@@ -1578,15 +1694,40 @@ async function doAuth(mode) {
   if (!resp.data.session) { errEl.textContent = 'Check your email to confirm your account, then sign in here.'; return; }
 
   session = resp.data.session;
+
+  // Derive the end-to-end encryption key from the password just typed.
+  try {
+    let salt;
+    if (mode === 'signup') {
+      salt = genSaltB64();
+      await db.from('profiles').update({ encryption_salt: salt }).eq('id', session.user.id);
+    } else {
+      const { data: prof } = await db.from('profiles').select('encryption_salt').single();
+      salt = prof && prof.encryption_salt;
+      if (!salt) { // account from before encryption existed — provision a salt now
+        salt = genSaltB64();
+        await db.from('profiles').update({ encryption_salt: salt }).eq('id', session.user.id);
+      }
+    }
+    encKey = await deriveKey(password, salt);
+    await cacheKey(session.user.id, encKey);
+  } catch (e) { encKey = null; /* entries will show locked; saving is blocked until unlocked */ }
+
   await afterSignIn(guest);
 }
 
 async function afterSignIn(guest) {
   try {
-    if (guest && guest.entries && guest.entries.length) {
+    if (guest && guest.entries && guest.entries.length && encKey) {
       const { count } = await db.from('entries').select('*', { count: 'exact', head: true });
       if (count === 0) {
-        await db.rpc('migrate_guest_data', { p_name: guest.name, p_entries: guest.entries });
+        // Encrypt each guest entry before it leaves the device
+        const encEntries = [];
+        for (const e of guest.entries) {
+          const enc = await encryptJSON(encKey, { reflection: e.reflection || '', gratitudes: e.gratitudes || [] });
+          encEntries.push({ date: e.date, prompt: e.prompt || '', enc_blob: enc.blob, enc_iv: enc.iv, reflection_length: (e.reflection || '').trim().length });
+        }
+        await db.rpc('migrate_guest_data', { p_name: guest.name, p_entries: encEntries });
         localStorage.setItem('gc-state-backup', JSON.stringify(guest));
       }
     }
@@ -1602,6 +1743,7 @@ async function afterSignIn(guest) {
 async function signOut() {
   if (db) { try { await db.auth.signOut(); } catch (e) {} }
   session = null;
+  encKey = null; // key stays cached in IndexedDB so signing back in on this browser is seamless
   localStorage.removeItem('gc-state');
   localStorage.removeItem('gc-pending');
   state = loadState();
@@ -1678,9 +1820,9 @@ function updateUI() {
         <div class="entry-left"><div class="entry-day">Day ${e.day}</div><div class="entry-date">${esc(e.dateLabel)}</div></div>
         <div class="entry-mid">
           <div class="entry-prompt">${esc(e.prompt)}</div>
-          <div class="entry-preview">${esc(e.reflection || (e.gratitudes && e.gratitudes[0]) || '...')}</div>
+          <div class="entry-preview">${e.locked ? 'Locked — can\'t be decrypted on this device' : esc(e.reflection || (e.gratitudes && e.gratitudes[0]) || '...')}</div>
         </div>
-        <div class="entry-icons"><svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#i-pen"/></svg></div>
+        <div class="entry-icons"><svg width="14" height="14" style="color:var(--teal);pointer-events:none"><use href="#${e.locked ? 'i-lock' : 'i-pen'}"/></svg></div>
       </div>`).join('');
   }
 
@@ -1725,8 +1867,15 @@ function viewEntry(day) {
   sel('em-daytag').textContent = `Day ${entry.day} of 30`;
   sel('em-date').textContent = entry.dateLabel;
   sel('em-prompt').textContent = entry.prompt;
-  sel('em-reflection').textContent = entry.reflection || '(no written reflection)';
   const gratsEl = sel('em-grats');
+  if (entry.locked) {
+    sel('em-reflection').innerHTML = '<div style="display:flex;align-items:flex-start;gap:10px;">' + ic('i-lock', 18, 'var(--muted)') + '<span>This entry is locked. It was encrypted with a previous password and can\'t be decrypted on this device.</span></div>';
+    sel('em-grats-lbl').style.display = 'none';
+    gratsEl.style.display = 'none';
+    sel('entry-modal').classList.add('open');
+    return;
+  }
+  sel('em-reflection').textContent = entry.reflection || '(no written reflection)';
   if (entry.gratitudes && entry.gratitudes.length) {
     sel('em-grats-lbl').style.display = '';
     gratsEl.style.display = '';
@@ -1771,6 +1920,7 @@ function readableExport(s) {
   ];
   (s.entries || []).forEach(e => {
     lines.push('', `Day ${e.day} - ${e.dateLabel || e.date || ''}`, e.prompt || '');
+    if (e.locked) { lines.push('', '(encrypted — could not decrypt)'); return; }
     if (e.reflection) lines.push('', e.reflection);
     if (e.gratitudes && e.gratitudes.length) {
       lines.push('', 'Gratitudes:');
@@ -1801,8 +1951,10 @@ function resetLocalData() {
     ? 'This signs you out and clears cached data on this device. Your synced account data stays on the server.'
     : 'This permanently clears the journal data stored on this device.';
   if (!confirm(msg + '\n\nContinue?')) return;
+  if (session) clearCachedKey(session.user.id); // explicit device wipe removes the cached key too
   if (db && session) db.auth.signOut().catch(() => {});
   session = null;
+  encKey = null;
   localStorage.removeItem('gc-state');
   localStorage.removeItem('gc-pending');
   state = defaultState();
@@ -1859,7 +2011,10 @@ async function saveEntry() {
 
   try {
     if (session && db) {
-      const payload = { p_local_date: todayStr(), p_prompt: prompt, p_reflection: reflection, p_gratitudes: gratitudes };
+      if (!encKey) { toast('Journal locked — sign out and back in to unlock'); return; }
+      // Encrypt on-device before anything reaches the server (live call AND offline queue)
+      const enc = await encryptJSON(encKey, { reflection, gratitudes });
+      const payload = { p_local_date: todayStr(), p_prompt: prompt, p_enc_blob: enc.blob, p_enc_iv: enc.iv, p_reflection_length: reflection.length };
       let error = null, data = null;
       try { ({ data, error } = await db.rpc('save_entry', payload)); }
       catch (e) { error = { message: 'network' }; }
@@ -1874,7 +2029,7 @@ async function saveEntry() {
         localApplySave(day, prompt, reflection, gratitudes);
         toast('Saved offline — will sync');
       } else {
-        applyServerSave(data);
+        applyServerSave(data, { reflection, gratitudes });
       }
     } else {
       localApplySave(day, prompt, reflection, gratitudes);
@@ -1903,6 +2058,26 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ──
+// Boot without a cached key: ask for the password once to unlock the journal.
+async function unlockWithPassword() {
+  try {
+    const { data: prof } = await db.from('profiles').select('encryption_salt').single();
+    const salt = prof && prof.encryption_salt;
+    if (!salt) return; // nothing to derive against (salt provisions on next sign-in)
+    const pw = prompt('Enter your password to unlock your journal on this device:');
+    if (!pw) { toast('Journal locked — reload to unlock'); return; }
+    const candidate = await deriveKey(pw, salt);
+    // Verify against one real entry when there is one (zero entries → accept)
+    const { data: rows } = await db.from('entries').select('enc_blob, enc_iv').limit(1);
+    if (rows && rows.length && rows[0].enc_blob) {
+      try { await decryptJSON(candidate, rows[0].enc_blob, rows[0].enc_iv); }
+      catch (e) { toast('Wrong password — journal stays locked'); return; }
+    }
+    encKey = candidate;
+    await cacheKey(session.user.id, encKey);
+  } catch (e) { /* stay locked; entries render as locked */ }
+}
+
 updateUI(); // immediate render from local cache
 (async function init() {
   if (!db) return; // offline first load or CDN blocked → guest mode
@@ -1910,6 +2085,8 @@ updateUI(); // immediate render from local cache
     const { data } = await db.auth.getSession();
     session = data.session || null;
     if (session) {
+      encKey = (await getCachedKey(session.user.id)) || null;
+      if (!encKey) await unlockWithPassword();
       const ok = await loadRemote();
       if (ok) updateUI();
       flushPending();
