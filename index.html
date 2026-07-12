@@ -484,6 +484,7 @@ textarea:focus-visible,
 .ico-t { background:var(--teal); }
 .ico-b { background:var(--black); }
 .ico-g { background:var(--mid); }
+.ico-r { background:#D33; }
 .menu-lbl { font-size:12px; font-weight:700; color:var(--black); text-transform:uppercase; letter-spacing:.5px; }
 
 /* ───────────────────────────
@@ -1192,6 +1193,10 @@ function ic(id,sz,col){ return '<svg width="'+(sz||24)+'" height="'+(sz||24)+'" 
         <div class="menu-left"><div class="menu-ico ico-g"><svg width="16" height="16" style="color:var(--black);pointer-events:none"><use href="#i-back"/></svg></div><div class="menu-lbl">Reset This Device</div></div>
         <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
       </div>
+      <div class="menu-row" id="delete-account-row" style="display:none" onclick="deleteAccount()">
+        <div class="menu-left"><div class="menu-ico ico-r"><svg width="16" height="16" style="color:var(--white);pointer-events:none"><use href="#i-back"/></svg></div><div class="menu-lbl" style="color:#D33">Delete Account</div></div>
+        <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
+      </div>
       <div class="menu-row" onclick="comingSoon('Certificates')">
         <div class="menu-left"><div class="menu-ico ico-t"><svg width="16" height="16" style="color:var(--white);pointer-events:none"><use href="#i-award"/></svg></div><div class="menu-lbl">My Certificate</div></div>
         <svg width="18" height="18" style="color:var(--muted);pointer-events:none"><use href="#i-right"/></svg>
@@ -1858,6 +1863,8 @@ function updateUI() {
   // Account row
   const authLbl = sel('auth-row-label');
   if (authLbl) authLbl.textContent = session ? `Sign Out (${session.user.email})` : 'Sign In / Create Account';
+  const delRow = sel('delete-account-row');
+  if (delRow) delRow.style.display = session ? '' : 'none';
 }
 
 // ── ENTRY DETAIL MODAL ──
@@ -1961,6 +1968,25 @@ function resetLocalData() {
   saveState();
   updateUI();
   toast('Device data reset');
+  go('s-splash');
+}
+
+async function deleteAccount() {
+  if (!session || !db) return;
+  if (!confirm('This permanently deletes your account and all journal entries from our servers. This cannot be undone.\n\nContinue?')) return;
+  try {
+    const { error } = await db.rpc('delete_own_account');
+    if (error) { toast('Could not delete account — try again'); return; }
+  } catch (e) { toast('Connection failed — try again'); return; }
+  clearCachedKey(session.user.id);
+  session = null;
+  encKey = null;
+  localStorage.removeItem('gc-state');
+  localStorage.removeItem('gc-pending');
+  state = defaultState();
+  saveState();
+  updateUI();
+  toast('Account deleted');
   go('s-splash');
 }
 

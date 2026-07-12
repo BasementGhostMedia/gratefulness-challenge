@@ -1,4 +1,4 @@
-const CACHE = 'gc-v11';
+const CACHE = 'gc-v12';
 const ASSETS = [
   './',
   './index.html',
