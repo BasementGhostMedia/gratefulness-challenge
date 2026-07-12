@@ -2,3 +2,13 @@
 .DS_Store
 HANDOFF.md
 HANDOFF.docx
+
+# Node / Capacitor
+node_modules/
+www/
+
+# Xcode / CocoaPods build output (ios/App/App.xcodeproj + ios/App/App/ source are committed)
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+ios/App/App/public/

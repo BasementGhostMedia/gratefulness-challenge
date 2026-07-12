@@ -1,0 +1,24 @@
+{
+  "name": "gratefulness-challenge",
+  "version": "1.0.0",
+  "description": "The Gratefulness Challenge — 30 Days to a New You. Static PWA plus a Capacitor iOS wrapper for App Store distribution.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BasementGhostMedia/gratefulness-challenge.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BasementGhostMedia/gratefulness-challenge/issues"
+  },
+  "homepage": "https://github.com/BasementGhostMedia/gratefulness-challenge#readme",
+  "scripts": {
+    "sync:ios": "rm -rf www && mkdir -p www && cp index.html manifest.json sw.js logo.png www/ && cp -R icons www/icons && npx cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
+}
